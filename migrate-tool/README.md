@@ -1,4 +1,4 @@
-#Migration Tool
+# Migration Tool
 A Utility that allows ForkDelta users to transfer their orders and balances from the deprecated (**as of date**) 
 EtherDelta smart contract to the improved [ForkDelta smart contract](https://github.com/forkdelta/smart_contract). 
 
