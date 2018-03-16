@@ -3,12 +3,12 @@ A Utility that allows ForkDelta users to transfer their orders and balances from
 EtherDelta smart contract to the improved [ForkDelta smart contract](https://github.com/forkdelta/smart_contract). 
 
 ## TODO
+* Account selection (using existing selection on FD?)
 * GUI
-    * Replace multiselect.js with new version
     * Progress Bar for order/balance retrieval (Current token / Total # of Tokens?)
-* Allow users to add custom tokens 
 * Add orders
 * Touch-up CSS
+* Add logic for retrieving balances from smart contract made by lampshade rather than API call
 
 ## Development Using NPM
 [package.json](./package.json) contains the metadata of the project and should always be added to the repo.
