@@ -10,6 +10,10 @@
     <link href="/css/ie10-viewport-bug-workaround.css" rel="stylesheet" />
     <link href="/css/alertify.min.css" rel="stylesheet" />
     <link href="/css/alertify-bootstrap.min.css" rel="stylesheet" />
+
+    <!-- TEMP: Append migrate.css to main css for production? -->
+    <link href="/migrate-tool/migrate.css" rel="stylesheet" />
+
     <link href="/css/black.css" rel="stylesheet" id="stylesheet" />
     <link href="/css/small.css" rel="stylesheet" media="only screen and (max-device-width: 480px)" />
 
@@ -46,6 +50,7 @@
           </ul>
           <ul class="nav navbar-nav navbar-right">
           	<li><a href="/about/"><i class="fa fa-info-circle"></i> About ForkDelta</a></li>
+            <li><a href="#" onclick="document.getElementById('migration-modal').style.display ='block';"><i class="fa fa-exchange"></i> Migrate Smart Contract</a></li>
           	<li style="display: none;" class="dropdown" id="helpDropdown"></li>
             <li class="dropdown" id="tokenGuidesDropdown"></li>
             <li class="dropdown" id="connection"></li>
@@ -178,6 +183,25 @@
     <div id="tokenGuide"></div>
     <div id="screencast"></div>
     <div id="ledger"></div>
+    <div id="migration"></div>
+
+    <div class="migration-overlay" id="migration-modal">
+      <div class="modal-dialog" tabindex="-1">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="text-center">Migration Tool</h2>
+          </div>
+          <div class="modal-body">
+            <h3>Migrate EtherDelta Balances</h3>
+            <select id='ED-migration-balances' multiple='multiple'></select>
+            <a href='#' id='select-all'>select all</a>
+            <a href='#' id='deselect-all'>deselect all</a>
+
+            <a class="text-center" href="#" onclick="document.getElementById('migration-modal').style.display ='none';">Close Window</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="/js/jquery-1.11.1.min.js" type="text/javascript"></script>
     <script src="/js/jquery.translate.js" type="text/javascript"></script>
@@ -186,6 +210,11 @@
     <script src="/js/ejs_production.js" type="text/javascript"></script>
     <script src="/js/chrome-u2f-api.js" type="text/javascript"></script>
     <script src="/js/ledger.min.js" type="text/javascript"></script>
+
+    <!--  TEMP: Combine with main.js? -->
+    <script src="/migrate-tool/migrate_libraries.js" type="text/javascript"></script>
+    <script src="/migrate-tool/migrate_bundle.js" type="text/javascript"></script>
+
     <script src="/js/main.js" type="text/javascript"></script>
 
     <script>

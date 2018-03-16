@@ -1,0 +1,24 @@
+{
+  "name": "migrate-tool",
+  "version": "1.0.0",
+  "description": "A Utility that allows ForkDelta users to transfer their orders and balances from the deprecated (**as of date**) ",
+  "main": "migrate.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Evan Bonsignori and Jonathon Dunford",
+  "license": "ISC",
+  "dependencies": {
+    "bignumber.js": "^6.0.0",
+    "socket.io": "^2.0.4",
+    "web3": "^0.20.6"
+  },
+  "devDependencies": {
+    "browserify": "^16.1.1",
+    "http-server": "^0.11.1"
+  },
+  "scripts": {
+    "bundle-js": "browserify migrate.js -o migrate_bundle.js",
+    "server": "./node_modules/http-server/bin/http-server -p 1234 -o"
+  }
+}
