@@ -1,0 +1,24 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "",
+  "scripts": {
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "webpack": "^4.1.1",
+    "webpack-cli": "^2.0.12"
+  },
+  "dependencies": {
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-google-charts": "^1.5.5",
+    "react-modal": "^3.3.2",
+    "redux": "^3.7.2",
+    "socket.io-client": "^2.0.4",
+    "tls": "^0.0.1",
+    "web3": "^0.20.6",
+    "xss": "^0.3.7"
+  }
+}

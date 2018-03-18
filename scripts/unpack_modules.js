@@ -1,40 +1,133 @@
 'use strict'
 const fs = require('fs')
 const path = require('path')
+let allModules = require('./_old_main_packed_modules')
+
+let KNOWN_MODULES = [
+  'asn1.js',
+  'assert',
+  'async',
+  'async/dist/async.min.js',
+  
+  'base64-js',
+  'bignumber.js',
+  'bip66',
+  'bn.js',
+  'brorand',
+  'browserify-aes',
+  'browserify-aes/modes',
+  'browserify-cipher',
+  'browserify-des',
+  'browserify-des/modes',
+  'browserify-rsa',
+  'browserify-sha3',
+  'browserify-sign',
+  'browserify-sign/algos',
+  'buffer',
+
+  'create-ecdh',
+  'create-hash',
+  'create-hmac',
+  'cipher-base',
+  'create-hash/md5',
+  'crypto-js',
+  'cssfilter',
+
+  'datejs',
+  'diffie-hellman',
+
+  'elliptic',
+  'ethereum-common',
+  'ethereum-common/params.json',
+  'ethereumjs-tx',
+  'ethereumjs-util',
+
+  'ieee754',
+  'inherits',
+  'isnumber',
+
+  'js-sha256',
+
+  'keccak',
+  'keythereum',
+  
+  'lodash',
+  'loadjs',
+  
+  'pbkdf2',
+  'parse-asn1',
+  'path',
+  'punycode',
+
+  'react',
+  'react',
+  'react-dom',
+  'react-google-charts',
+  'react-modal',
+  'readable-stream',
+  'readable-stream/duplex.js',
+  'readable-stream/passthrough.js',
+  'readable-stream/transform.js',
+  'readable-stream/writable.js',
+  'redux',
+  'request',
+  
+  'safe-buffer',
+  'socket.io-client',
+  'socket.io-parser',
+  'stats-lite',
+  
+  'web3',
+  'web3/lib/solidity/coder.js',
+  'web3/lib/utils/sha3.js',
+  'web3/lib/utils/utils.js',
+  'web3/lib/web3/event.js',
+  'web3/lib/web3/function.js',
+
+  'xss',
+
+  'zlib'
+]
 
 // this is a script to unpack modules in the main-unminified module.
-function main () {
-  const allModules = require('../jsapp/_old_main_packed_modules')
-  let moduleNameToNumberMap = buildNameToNumberMap(allModules)
-  let moduleNumberToNameMapOld = buildNumberToNameMap(moduleNameToNumberMap)
-  let moduleNumberToNameMap = {}
-  for (let k in moduleNumberToNameMapOld) {
-    moduleNumberToNameMap[k] = filterPreferredModuleNames(moduleNumberToNameMapOld[k])
-  }
-  //Object.entries(moduleNumberToNameMap).map(kv => kv[1].length > 1 && console.log(kv[0], '=', kv[1]))
-  const unpacked_modules = 'unpacked_modules'
-  if (fs.existsSync(unpacked_modules))
-    rmdir(unpacked_modules)
-  fs.mkdirSync(unpacked_modules)
+const outDir = 'unpacked_modules'
 
-  for (let moduleNumber in moduleNumberToNameMap) {
-    let fileNames = moduleNumberToNameMap[moduleNumber]
-    console.log(`writing module ${moduleNumber} to names: ${fileNames}`)
-    let code = allModules[moduleNumber][0].toString()
-    code = removeModuleWrapper(code)
-    let commentPrefix = `/* This module was module number ${moduleNumber} in the old packed code and referenced in the old code by all of the following module names:\n`
-    commentPrefix += moduleNumberToNameMapOld[moduleNumber].map(name => '* ' + name).join('\n')
-    commentPrefix += '\n*/\n'
-    code = commentPrefix + code
-    for (let fname of fileNames) {
-      if (!fname.endsWith('.js')) {
-        fname = fname + '.js'
-      }
-      let dirname = path.dirname(path.join(unpacked_modules, fname))
-      mkdir(dirname)
-      fs.writeFileSync(path.join(unpacked_modules, fname), code)
-    }
-  }
+let moduleNameToNumberMap = buildNameToNumberMap(allModules)
+let moduleNumberToNameMapOld = buildNumberToNameMap(moduleNameToNumberMap)
+
+
+function main () {
+  let rootModule = ModuleInfo.loadAllModules(allModules)
+  cleanOutDir(outDir)
+  rootModule.writeFile(outDir)
+  //console.log('rootModule:', rootModule)
+  console.log('potentialModules:')
+  potentialModules.sort().forEach(s => console.log(`'${s}',`))
+}
+
+function isKnownModule (moduleName) {
+  return KNOWN_MODULES.findIndex(s => s === moduleName) >= 0
+}
+
+let potentialModules = []
+function warnPotentialNpmModule (moduleName) {
+  potentialModules.push(moduleName)
+  //console.log('potential npm module:', moduleName)
+}
+
+function cleanOutDir (outDir) {
+  if (fs.existsSync(outDir))
+    rmdir(outDir)
+  fs.mkdirSync(outDir)
+}
+
+function fixCode (code, moduleNumber) {
+  code = removeModuleWrapper(code)
+  let commentPrefix = `/* This module was module number ${moduleNumber} in the old packed code and referenced in the old code by all of the following module names:\n`
+  //commentPrefix += moduleNumberToNameMapOld[moduleNumber].map(name => '* ' + name).join('\n')
+  commentPrefix += '\n*/\n'
+  code = commentPrefix + code
+  return code
 }
 
 function removeModuleWrapper (code) {
@@ -46,7 +139,6 @@ function removeModuleWrapper (code) {
 }
 
 function removeLeadingWhitespace (lines) {
-  
   let wsMatches = /^(\s+)/.exec(lines[0])
   if (wsMatches && wsMatches.length > 0) {
     let ws = wsMatches[1]
@@ -86,75 +178,6 @@ function rmdir (dir) {
 	fs.rmdirSync(dir);
 }
 
-/**
- * Returns the set of names that are the most likely detailed names of the module given a set of all names used in the require statements
- */
-function filterPreferredModuleNames (allModuleNames) {
-  allModuleNames = allModuleNames.map(name => {
-    // if node_modules is in the name, trim everything before node_modules:
-    let nmi = name.indexOf('node_modules')
-    if (nmi >= 0)
-      name = name.slice(nmi)
-    
-    // remove ./ and ../ prefix
-    for (let p of ['./../', '../../', '../', './']) {
-      if (name.startsWith(p)) {
-        //console.log('name:', p, name)
-        name = name.slice(p.length)
-      }
-    }
-    return name
-  })
-
-  allModuleNames = removeDuplicates(allModuleNames)
-  allModuleNames = removePartialPaths(allModuleNames)
-  allModuleNames = removePartialPaths(allModuleNames)
-  return allModuleNames
-}
-
-function isPartialPathOf (a, b) {
-  if (a == null || b == null)
-    return false
-  a = trimJs(a)
-  b = trimJs(b)
-  return b.length > a.length && b.endsWith(a)
-}
-
-function removePartialPaths (arr) {
-  // remember to ignore a '.js' postfix when comparing as some require()'s include the js and some don't
-  for (let i = arr.length-1; i >= 0; i--) {
-    let current = arr[i]
-    let others = arr.slice()
-    others.splice(i, 1)
-    for (let other of others) {
-      if (isPartialPathOf(current, other)) {
-        arr.splice(i, 1)
-        break
-      }
-    }
-  }
-  return arr
-}
-
-function trimJs (s) {
-  return s == null ? '' : s.endsWith('.js') ? s.slice(0, s.length - '.js'.length) : s
-}
-
-function sameName (a, b) {
-  return trimJs(a) === trimJs(b)
-}
-
-function removeDuplicates (arr) {
-  // note their might be some that like ['des.js', 'des'], so we use trimJs to account for that
-  for (let i = arr.length-1; i >= 0; i--) {
-    for (let i2 = i-1; i2 >= 0; i2--) {
-      if (sameName(arr[i], arr[i2]))
-        arr.splice(i2, 1)
-    }
-  }
-  return arr
-}
-
 function buildNameToNumberMap (allModules) {
   // build module name => ID map from dependencies
   let moduleNameToNumberMap = {}
@@ -177,6 +200,118 @@ function buildNumberToNameMap (moduleNameToNumberMap) {
     moduleNumberToNameMap[newKey].push(newValue)
   }
   return moduleNumberToNameMap
+}
+
+class ModuleInfo {
+  /**
+   * Initializes a moduleInfo
+   */
+  constructor (number, code, rawDependencyMap) {
+    this.number = number
+    this.code = code
+    // this is a name => number mapping of dependencies used by this module;
+    this.rawDependencyMap = rawDependencyMap
+    this.path = ''
+  }
+
+  static loadAllModules (allRawModules) {
+    // allRawModules is the raw modules from the original packed main-unminified.js.
+    let moduleInfos = {}
+
+    for (let modNum in allRawModules) {
+      let m = new ModuleInfo(modNum, allRawModules[modNum][0], allRawModules[modNum][1])
+      moduleInfos[modNum] = m
+    }
+
+    // all modules loaded, now hydrate dependencies of each
+    for (let modNum in moduleInfos) {
+      moduleInfos[modNum].hydrateChildren(moduleInfos)
+    }
+
+    // set the main module's path (which will recursively set everyone else's path:
+    let root = moduleInfos[555]
+
+    root.setPath('/main.js', true, {})
+    return root
+  }
+
+  hydrateChildren (allModuleInfos) {
+    this.children = []
+    for (let modName in this.rawDependencyMap) {
+      let modNumber = this.rawDependencyMap[modName]
+      let child = allModuleInfos[modNumber]
+      child.setParent(this)
+      child.setPath(modName, false)
+      this.children.push(child)
+    }
+  }
+
+  setParent (parent) {
+    this.parent = parent
+  }
+
+  hasAncestor (moduleInfo) {
+    if (this.parent == null) {
+      console.log('ROOT:', this.number)
+    }
+    let parent = this
+    while (parent != null) {
+      if (parent == moduleInfo) {
+        return true
+      }
+      parent = parent.parent
+    }
+    return false
+  }
+
+  /**
+   * Used to set the path of this module as it was originally used in require(..). This is inferred from a dependent's dependencyMap/require.
+   */
+  setPath (thePath, setRecursively, callers) {
+    if (callers && callers[this.number.toString()] != null) {
+      console.log('callers!')
+      return
+    } else if (callers) {
+      callers[this.number.toString()] = this
+    }
+    
+    this.path = thePath
+    if (setRecursively) {
+      for (let child of this.children) {
+        let childPath = path.resolve(path.dirname(this.path), child.path)
+        if (child.path !== childPath) {
+          if (!isKnownModule(child.path)) {
+            //console.log(`(${this.path}) inferring path:`, child.path, '>', childPath)
+            if (!child.path.startsWith('./') && !child.path.startsWith('../'))
+              warnPotentialNpmModule(child.path)
+            child.setPath(childPath, setRecursively, callers)
+          }
+        }
+      }
+    }
+    if (callers)
+      callers[this.number.toString()] = null
+  }
+
+  writeFile (outDir) {
+    if (this.didWriteFile)
+      return
+    this.didWriteFile = true
+    if (isKnownModule(this.path)) {
+      return
+    }
+    let code = fixCode(this.code.toString(), this.number)
+    let fname = this.path
+    if (!fname.endsWith('.js')) {
+      fname = fname + '.js'
+    }
+    let dirname = path.dirname(path.join(outDir, fname))
+    mkdir(dirname)
+    fs.writeFileSync(path.join(outDir, fname), code)
+    for (let c of this.children) {
+      c.writeFile(outDir)
+    }
+  }
 }
 
 main()
