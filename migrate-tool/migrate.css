@@ -1,4 +1,7 @@
 /* Migration Modal */
+#migration-modal {
+    display: none;
+}
 .migration-overlay {
     position: fixed;
     top: 0px;
