@@ -11,5 +11,9 @@ module.exports = {
       "node_modules",
       path.resolve(__dirname, "unpacked_modules")
     ]
+  },
+  target: "web",
+  node: {
+    fs: 'empty',
   }
 };
