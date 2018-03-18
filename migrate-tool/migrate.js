@@ -1,7 +1,7 @@
 /* --- DEPENDENCIES --- */
 const Web3 = require('web3');
 const BN = require('bignumber.js');
-// const io = require('socket.io-client');
+const io = require('socket.io-client');
 
 // settings variables
 var rpc_api_provider = 'https://api.mycryptoapi.com/eth';
@@ -15,17 +15,24 @@ var balance_fetch_contract_abi = [{"constant":true,"inputs":[{"name":"exchange",
 var generic_contract_abi = [ { "constant":true, "inputs":[], "name":"symbol", "outputs":[ { "name":"", "type":"string" } ], "payable":false, "type":"function" } ];
 // get tokens from frontend config JSON and populate token_addresses with addresses
 var tokens_JSON = JSON.parse(get_JSON('https://raw.githubusercontent.com/forkdelta/forkdelta.github.io/master/config/main.json')).tokens;
-var token_addresses = [];
-tokens_JSON.forEach(function(token) {
-    token_addresses.push(token['addr']);
-});
-// var tokens = JSON.parse('{"tokens": [' +
+// TEMP: Tokens for testing
+// var tokens_JSON = JSON.parse('{"tokens": [' +
 //     '{"addr": "0x0000000000000000000000000000000000000000", "name": "ETH", "decimals": 18},' +
 //     '{"addr": "0x8f3470A7388c05eE4e7AF3d01D8C722b0FF52374", "name": "VERI", "decimals": 18},' +
 //     '{"addr": "0x014b50466590340d41307cc54dcee990c8d58aa8", "name": "ICOS", "decimals": 6}' +
 //     ']}').tokens;
 
-//-- init fetching tokens, orders, and balances --
+var token_addresses = [];
+var token_names = [];
+var token_decimals = [];
+tokens_JSON.forEach(function(token) {
+    token_addresses.push(token['addr']);
+    token_names.push(token['name']);
+    token_decimals.push(token['decimals']);
+});
+var token_addresses_with_balances = [];
+
+//-- init web3 objects for fetching tokens, and balances --
 var web3 = new Web3(new Web3.providers.HttpProvider(rpc_api_provider));
 
 var balance_fetch_contract = web3.eth.contract(balance_fetch_contract_abi);
@@ -36,23 +43,24 @@ var ED = ED_contract.at(old_contract);
 
 var generic_contract = web3.eth.contract(generic_contract_abi);
 
+//-- init socket.io objects for fetching orders --
+// var FD = io("https://api.forkdelta.com/");
+// FD.connect();
 //
-// // var FD = io("https://api.forkdelta.com/");
-// // FD.connect();
-// //
-// // FD.on('connect', function(data) { console.log('connected'); });
-// // FD.on('disconnect', function(data) { console.log('disconnected'); });
-//
+// FD.on('connect', function(data) { console.log('connected to FD api'); });
+// FD.on('disconnect', function(data) { console.log('disconnected from FD api'); });
 
+// balances and order variables
 var balances = {};
 var displayed_balances = [];
-var orders = {
-    sells:[],
-    buys:[]
-};
+var displayed_orders = [];
+
+var selected_balances = [];
+var selected_orders = [];
 
 // frontend variables
 var ED_balances = $('#ED-migration-balances');
+var ED_orders = $('#ED-migration-orders');
 
 // TEMP: Testing addresses with balances
 // var user_address = '0xa83adca55ce5d0cc43ba16f4247ca65229a1bfb1';
@@ -64,32 +72,52 @@ var user_address_promise = get_user_addr();
 // once user address loads, check for ED balances and run migration tool if any exist
 user_address_promise.then(function(user_address_t) { // TEMP: change user_address_t to user_address to get browser user address
     console.log("User address loaded: " + user_address);
-
-    // get balances
+    document.getElementById("migration-current-user").innerHTML= "Current user: " + user_address;
+    // get balances from migration smart contract utility
     fetch_balances(user_address, token_addresses);
 
-    console.log(balances);
-
-    // populate multiselect with user balances
-    token_addresses.forEach(function(token_addr) {
-        // Only tokens with non-zero balances are added to balances
-        if (typeof(balances[token_addr]) != "undefined") {
+    // populate balance multiselect with user balances
+    token_addresses_with_balances.forEach(function(token_addr) {
             var big_number_balance = balances[token_addr];
-            console.log(big_number_balance);
             // Convert balance to user-readable decimal notation by looking up the token's decimal
-            var name = get_token_symbol(token_addr);
-            var balance = big_number_to_decimal(big_number_balance, get_token_decimals(token_addr));
+            var name = token_names[token_addresses.indexOf(token_addr)];
+            var decimals = parseInt(token_decimals[token_addresses.indexOf(token_addr)]);
+            var balance = big_number_to_decimal(big_number_balance, decimals);
             displayed_balances.push({"addr": token_addr, "name": name, "balance": balance});
-        }
     });
 
-    console.log(displayed_balances);
-
-    // Render migration tool if user has balances
+    // Render migration tool and get orders if user has balances
     if (displayed_balances.length >= 1) {
-        document.getElementById('migration-modal').style.display ='block';
+        console.log("User had balances on ED contract");
+        document.getElementById('migration-modal').style.display = 'block';
         populate_ms_balances(ED_balances, displayed_balances);
         // TODO: Render HTML with React
+
+        // get orders from redux store
+        var orders_promise = fetch_orders();
+
+        orders_promise.then(function(orders) {
+            // If there are orders, populate ms
+            if (orders != null && orders.length >= 1) {
+                // populate order multiselect with user orders
+                orders.forEach(function (order) {
+                    // Display all buys first
+                    order.buys.forEach(function (buy) {
+                        // TODO: Discover and properely format a buy order for display
+                        displayed_orders.push(buy);
+                    });
+                    // Display sells after buys
+                    order.sells.forEach(function (sell) {
+                        // TODO: Discover and properely format a sell order for display
+                        displayed_orders.push(sell);
+                    });
+                });
+                populate_ms_orders(ED_orders, displayed_orders);
+            } else {
+                ED_orders.append("<option value=\"NULL\"> No Orders </option>");
+                refresh_order_ms(ED_orders);
+            }
+        });
     }
 });
 
@@ -103,16 +131,23 @@ $("#token-addr-form").on( "submit", function( event ) {
     populate_ms_balances(ED_balances, displayed_balances);
 });
 
-// old get user balances for tokens from api calls
-// function fetch_balances(user, tokens) {
-//     var tokens_fetched = 0;
-//     tokens.forEach(function(token){
-//         tokens_fetched++;
-//         balances[token['addr']] = get_token_balance(token['addr'], user);
-//         console.log(tokens_fetched + " / " + tokens.length + " tokens fetched");
-//     });
-// }
+// Begin migration logic if button is clicked and order and/or balances are selected
+$("#begin-migration").click(function(event) {
+    // Get selected orders and balances from multiselects
+    get_selected();
 
+    // If user has selected any balances or orders, migrate them to new contract
+    if (selected_orders.length >= 1 || selected_balances.length >= 1) {
+        begin_migration();
+    } else {
+        alert("No balances or orders selected.")
+    }
+
+    // Close migration tool modal
+    document.getElementById('migration-modal').style.display ='none';
+});
+
+// --- fetch balance and orders logic ---
 function fetch_balances(user, token_addresses) {
     var addr_index = 0;
     var contract_fetch = balance_fetch.multiDeltaBalances([old_contract], user_address, token_addresses);
@@ -121,20 +156,31 @@ function fetch_balances(user, token_addresses) {
         var big_number_str = balance['c'];
         // if balances are a split integer, join it into single value
         var big_number = new BN(big_number_str.join(''));
-        // only add balance if non-zero
-        if (big_number != "0")
+        // Only tokens with non-zero balances are added to balances
+        if (big_number != "0") {
             // add balance to balances in big-number form (where decimal is = 0)
             balances[token_addresses[addr_index]] = big_number;
-
+            token_addresses_with_balances.push(token_addresses[addr_index]);
+        }
         addr_index++;
     });
+}
+
+async function fetch_orders() {
+    if (typeof(window.main.EtherDelta.store.getState().myOrders) != "undefined") {
+        return window.main.EtherDelta.store.getState().myOrders;
+    } else {
+        console.log("Waiting on store for orders...");
+        await sleep(5000);
+        return fetch_orders();
+    }
 }
 
 //--- utils ---
 // get user's current account from redux store after the store loads
 async function get_user_addr() {
     if (typeof(window.main.EtherDelta.store.getState().user.accounts[window.main.EtherDelta.store.getState().user.selectedAccount]) != "undefined") {
-        user_from_store = window.main.EtherDelta.store.getState().user;
+        var user_from_store = window.main.EtherDelta.store.getState().user;
         return user_from_store.accounts[user_from_store.selectedAccount].addr;
     } else {
         console.log("Waiting on store to populate user address...");
@@ -178,6 +224,16 @@ function get_token_balance(token_address, user) {
     return big_number_to_decimal(big_number, get_token_decimals(token_address));
 }
 
+// get user balances for tokens from Etherium API calls
+// function fetch_balances_from_api(user, tokens) {
+//     var tokens_fetched = 0;
+//     tokens.forEach(function(token){
+//         tokens_fetched++;
+//         balances[token['addr']] = get_token_balance(token['addr'], user);
+//         console.log(tokens_fetched + " / " + tokens.length + " tokens fetched");
+//     });
+// }
+
 // fetches JSON from url
 function get_JSON(url){
     var value= $.ajax({
@@ -192,12 +248,14 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// init or refresh multiselect
-function refresh_ms(ms) {
+// --- Multiselect (ms) functions ---
+
+// init or refresh balances multiselect
+function refresh_balances_ms(ms) {
     ms.multiselect({
         search: {
             left: '<input type="text" name="ED-bal-search" class="form-control" placeholder="Search Ether Balances" />',
-            right: '<input type="text" name="FD-bal-search" class="form-control" placeholder="Search Fork balances" />'
+            right: '<input type="text" name="FD-bal-search" class="form-control" placeholder="Search Fork Balances" />'
         },
         fireSearch: function (value) {
             return value.length > 1;
@@ -210,5 +268,51 @@ function populate_ms_balances(ms, values) {
     values.forEach(function(value) {
         ms.append("<option value=\"" + value['addr'] + "\">" + value['name'] + ": " + value['balance'] + "</option>");
     });
-    refresh_ms(ms);
+    refresh_balances_ms(ms);
+}
+
+// init or refresh orders multiselect
+function refresh_order_ms(ms) {
+    ms.multiselect({
+        search: {
+            left: '<input type="text" name="ED-bal-search" class="form-control" placeholder="Search Ether Orders" />',
+            right: '<input type="text" name="FD-bal-search" class="form-control" placeholder="Search Fork Orders" />'
+        },
+        fireSearch: function (value) {
+            return value.length > 1;
+        }
+    });
+}
+
+// populate orders of multiselect
+function populate_ms_orders(ms, values) {
+    values.forEach(function(value) {
+        // TODO: format orders
+        ms.append("<option value=\"" + value + "\">" + order + "</option>");
+    });
+    refresh_order_ms(ms);
+}
+
+// get user-selected option values from multiselect
+function get_ms_selected_values(ms_id) {
+    var selected = [];
+    $(ms_id + ' option').each(function() {
+        selected.push($(this).val());
+    });
+    return selected;
+}
+
+// gets selected orders and balances
+function get_selected() {
+    selected_balances = get_ms_selected_values('#ED-migration-balances_to');
+    selected_orders =  get_ms_selected_values('#ED-migration-orders_to');
+}
+
+function begin_migration() {
+    console.log("Begin migration");
+    console.log("Selected Balances:");
+    console.log(selected_balances);
+    console.log("Selected Orders:");
+    console.log(selected_orders);
+    // TODO: logic here to migrate from ED smart contract to FD contract
 }

@@ -5,22 +5,24 @@ Rather than making a standalone migration utility, this utility is built on top 
 
 ## Core Functionality
 - [x] Popup overlay window.
-- [x] Currently loaded user account is selected from redux store after store loads.
+- [x] Currently loaded user account is selected from redux store after store loads. Idea by / thanks to @activescott.
 - [x] Load balances and orders from selected account that are on the _EDSC_ for [each token that FD supports](https://github.com/forkdelta/tokenbase).
-- [x] Use [smart contract developed by lampshade](https://github.com/forkdelta/smart_contract/pull/1) to load balances.
+- [x] Use [smart contract developed by lampshade](https://github.com/forkdelta/smart_contract/pull/1) to load balances. @lampshade9909 thank you!
 - [x] Give users the option to select which (or all) balances to transfer to the _FDSC_.
 ![transfer_balances](https://user-images.githubusercontent.com/17055832/37544204-93ec3c32-293a-11e8-99ee-270671a5c511.png)
 - [x] Allow uses add tokens not listed in our [tokenbase]
 (https://github.com/forkdelta/tokenbase).
 ![add_token](https://user-images.githubusercontent.com/17055832/37544214-9875fdc4-293a-11e8-86a1-6774fa60650e.png)
-- [ ] Give users the option to select which (or all) orders on the _EDSC_ to transfer to the FDSC.
+- [x] Give users the option to select which (or all) orders on the _EDSC_ to transfer to the FDSC. (needs testing)
 - [ ] Loading bar or other notification notifying user of balance and order transfer status.
+- [ ] Add logic to transfer from ED smart contract to FD smart contract
 ## Other Functionality
 - [ ] Enable some sort of cookie/session that prevents popup window from interrupting users who have seen migration utility.
-- [x] Only load popup window contents when a user has a balance on the ED contract.
+- [x] Only load popup window contents when a user has a balance on the ED contract. Concept by @activescott 
 - [x] Toplevel icon on navbar to open migration utility.
-- [ ] Render HTML for Migration Tool through Redux (need help with this)
-- [ ] Make it look nice / user friendly.
+- [ ] Render HTML for Migration Tool through Redux (@activescott, I'd love your help with this).
+- [ ] Make it look nice / user friendly (I'm not really a designer so any help here is appreciated).
+- [ ] Add error handling and validation
 
 ## Development Environment 
 Rather than using a standalone utility, the migration tool is built into the FD front-end. This means dealing with the gigantic main.js file ripped from the old ED site. Rather than reverse engineering the built main.js, I've compartmentalized the tool into its own directory with its own JS and Styling files. 
