@@ -131,6 +131,13 @@ user_address_promise.then(function (promised_user_addr) { // TEMP: change promis
     }
 });
 
+// Front-end event listeners
+
+// nav-bar link to open migration tool
+$('#migrateTool').click(function(event) {
+    document.getElementById('migration-modal').style.display ='block';
+});
+
 // if user enters a new token addr, add token to ms if it isn't already being displayed
 $("#token-addr-form").on("submit", function (event) {
     event.preventDefault();
