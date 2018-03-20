@@ -121,10 +121,10 @@ function cleanOutDir (outDir) {
   fs.mkdirSync(outDir)
 }
 
-function fixCode (code, moduleNumber) {
+function fixCode (code, moduleNumber, referencedByNames = []) {
   code = removeModuleWrapper(code)
-  let commentPrefix = `/* This module was module number ${moduleNumber} in the old packed code and referenced in the old code by all of the following module names:\n`
-  //commentPrefix += moduleNumberToNameMapOld[moduleNumber].map(name => '* ' + name).join('\n')
+  let commentPrefix = `/* This module was module number ${moduleNumber} in the old packed code. It was referenced in the old code using \`require(<module name>)\` by the following module names:\n`
+  commentPrefix += referencedByNames.map(name => '* ' + name).join('\n')
   commentPrefix += '\n*/\n'
   code = commentPrefix + code
   return code
@@ -212,6 +212,7 @@ class ModuleInfo {
     // this is a name => number mapping of dependencies used by this module;
     this.rawDependencyMap = rawDependencyMap
     this.path = ''
+    this.referencedBy = []
   }
 
   static loadAllModules (allRawModules) {
@@ -228,11 +229,20 @@ class ModuleInfo {
       moduleInfos[modNum].hydrateChildren(moduleInfos)
     }
 
+    // now tell each module all the names it was referenced by (this is only used to add a comment to each outputted module for FYI/troubleshooting)
+    for (let modNum in moduleNumberToNameMapOld) {
+      moduleInfos[modNum].setReferencedBy(moduleNumberToNameMapOld[modNum])
+    }
+
     // set the main module's path (which will recursively set everyone else's path:
     let root = moduleInfos[555]
 
     root.setPath('/main.js', true, {})
     return root
+  }
+
+  setReferencedBy (arrayOfReferencedByNames) {
+    this.referencedBy = arrayOfReferencedByNames
   }
 
   hydrateChildren (allModuleInfos) {
@@ -300,7 +310,7 @@ class ModuleInfo {
     if (isKnownModule(this.path)) {
       return
     }
-    let code = fixCode(this.code.toString(), this.number)
+    let code = fixCode(this.code.toString(), this.number, this.referencedBy)
     let fname = this.path
     if (!fname.endsWith('.js')) {
       fname = fname + '.js'
