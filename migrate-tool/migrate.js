@@ -1,16 +1,37 @@
-/* --- dependencies --- */
+"use strict";
+//================================================================================
+// Node.js dependencies
+//================================================================================
 const Web3 = require('web3');
 const BN = require('bignumber.js');
 const io = require('socket.io-client');
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-// api (change if calls become blocked)
+//=============================
+// ==================================================
+// Config Variables TODO: Update Github-hosted main.json
+//================================================================================
+
+// var main_config = JSON.parse(get_JSON('https://raw.githubusercontent.com/forkdelta/forkdelta.github.io/master/config/main.json'));
+// var tokens = main_config.tokens;
+// const rpc_api_provider = main_config.web_3_rpc_api_provider;
+// const old_contract = main_config.from_contract_addr;
+// const old_contract_abi = main_config.from_contract_abi;
+// const new_contract = main_config.to_contract_addr;
+// const new_contract_abi = main_config.to_contract_abi;
+// const balance_fetch_contract_addr = main_config.balance_fetch_contract_addr;
+// const balance_fetch_contract_abi = main_config.balance_fetch_contract_abi;
+// const generic_contract_abi = main_config.generic_contract_abi;
+
+//TEMP============================================================================
 const rpc_api_provider = 'https://api.mycryptoapi.com/eth';
 // old EtherDelta contract addr and abi
 var old_contract = '0x8d12A197cB00D4747a1fe03395095ce2A5CC6819';
 const old_contract_abi = [{"constant":false,"inputs":[{"name":"tokenGet","type":"address"},{"name":"amountGet","type":"uint256"},{"name":"tokenGive","type":"address"},{"name":"amountGive","type":"uint256"},{"name":"expires","type":"uint256"},{"name":"nonce","type":"uint256"},{"name":"user","type":"address"},{"name":"v","type":"uint8"},{"name":"r","type":"bytes32"},{"name":"s","type":"bytes32"},{"name":"amount","type":"uint256"}],"name":"trade","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"tokenGet","type":"address"},{"name":"amountGet","type":"uint256"},{"name":"tokenGive","type":"address"},{"name":"amountGive","type":"uint256"},{"name":"expires","type":"uint256"},{"name":"nonce","type":"uint256"}],"name":"order","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"bytes32"}],"name":"orderFills","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"tokenGet","type":"address"},{"name":"amountGet","type":"uint256"},{"name":"tokenGive","type":"address"},{"name":"amountGive","type":"uint256"},{"name":"expires","type":"uint256"},{"name":"nonce","type":"uint256"},{"name":"v","type":"uint8"},{"name":"r","type":"bytes32"},{"name":"s","type":"bytes32"}],"name":"cancelOrder","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"token","type":"address"},{"name":"amount","type":"uint256"}],"name":"depositToken","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"tokenGet","type":"address"},{"name":"amountGet","type":"uint256"},{"name":"tokenGive","type":"address"},{"name":"amountGive","type":"uint256"},{"name":"expires","type":"uint256"},{"name":"nonce","type":"uint256"},{"name":"user","type":"address"},{"name":"v","type":"uint8"},{"name":"r","type":"bytes32"},{"name":"s","type":"bytes32"}],"name":"amountFilled","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"tokens","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"feeMake_","type":"uint256"}],"name":"changeFeeMake","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"feeMake","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"feeRebate_","type":"uint256"}],"name":"changeFeeRebate","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"feeAccount","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"tokenGet","type":"address"},{"name":"amountGet","type":"uint256"},{"name":"tokenGive","type":"address"},{"name":"amountGive","type":"uint256"},{"name":"expires","type":"uint256"},{"name":"nonce","type":"uint256"},{"name":"user","type":"address"},{"name":"v","type":"uint8"},{"name":"r","type":"bytes32"},{"name":"s","type":"bytes32"},{"name":"amount","type":"uint256"},{"name":"sender","type":"address"}],"name":"testTrade","outputs":[{"name":"","type":"bool"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"feeAccount_","type":"address"}],"name":"changeFeeAccount","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"feeRebate","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"feeTake_","type":"uint256"}],"name":"changeFeeTake","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"admin_","type":"address"}],"name":"changeAdmin","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"token","type":"address"},{"name":"amount","type":"uint256"}],"name":"withdrawToken","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"bytes32"}],"name":"orders","outputs":[{"name":"","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"feeTake","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"type":"function"},{"constant":false,"inputs":[{"name":"accountLevelsAddr_","type":"address"}],"name":"changeAccountLevelsAddr","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"accountLevelsAddr","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"token","type":"address"},{"name":"user","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"admin","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"tokenGet","type":"address"},{"name":"amountGet","type":"uint256"},{"name":"tokenGive","type":"address"},{"name":"amountGive","type":"uint256"},{"name":"expires","type":"uint256"},{"name":"nonce","type":"uint256"},{"name":"user","type":"address"},{"name":"v","type":"uint8"},{"name":"r","type":"bytes32"},{"name":"s","type":"bytes32"}],"name":"availableVolume","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[{"name":"admin_","type":"address"},{"name":"feeAccount_","type":"address"},{"name":"accountLevelsAddr_","type":"address"},{"name":"feeMake_","type":"uint256"},{"name":"feeTake_","type":"uint256"},{"name":"feeRebate_","type":"uint256"}],"payable":false,"type":"constructor"},{"payable":false,"type":"fallback"},{"anonymous":false,"inputs":[{"indexed":false,"name":"tokenGet","type":"address"},{"indexed":false,"name":"amountGet","type":"uint256"},{"indexed":false,"name":"tokenGive","type":"address"},{"indexed":false,"name":"amountGive","type":"uint256"},{"indexed":false,"name":"expires","type":"uint256"},{"indexed":false,"name":"nonce","type":"uint256"},{"indexed":false,"name":"user","type":"address"}],"name":"Order","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"tokenGet","type":"address"},{"indexed":false,"name":"amountGet","type":"uint256"},{"indexed":false,"name":"tokenGive","type":"address"},{"indexed":false,"name":"amountGive","type":"uint256"},{"indexed":false,"name":"expires","type":"uint256"},{"indexed":false,"name":"nonce","type":"uint256"},{"indexed":false,"name":"user","type":"address"},{"indexed":false,"name":"v","type":"uint8"},{"indexed":false,"name":"r","type":"bytes32"},{"indexed":false,"name":"s","type":"bytes32"}],"name":"Cancel","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"tokenGet","type":"address"},{"indexed":false,"name":"amountGet","type":"uint256"},{"indexed":false,"name":"tokenGive","type":"address"},{"indexed":false,"name":"amountGive","type":"uint256"},{"indexed":false,"name":"get","type":"address"},{"indexed":false,"name":"give","type":"address"}],"name":"Trade","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"token","type":"address"},{"indexed":false,"name":"user","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"balance","type":"uint256"}],"name":"Deposit","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"token","type":"address"},{"indexed":false,"name":"user","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"balance","type":"uint256"}],"name":"Withdraw","type":"event"}];
 // utility contract for fetching ED balances created by @lampshade, PR: https://github.com/forkdelta/smart_contract/pull/1
 const balance_fetch_contract_addr = '0x2256EF3B2B49cf3c0dd24731BC8FEAA022dB1d0C';
-const balance_fetch_contract_abi = [{"constant":true,"inputs":[{"name":"exchange","type":"address"},{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"allBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"exchange","type":"address"},{"name":"users","type":"address[]"},{"name":"tokens","type":"address[]"}],"name":"allBalancesForManyAccounts","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"walletBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"user","type":"address"},{"name":"token","type":"address"}],"name":"tokenBalance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"exchanges","type":"address[]"},{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"multiDeltaBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"exchange","type":"address"},{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"deltaBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"destruct","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"token","type":"address"},{"name":"amount","type":"uint256"}],"name":"withdrawToken","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"users","type":"address[]"}],"name":"whitelistAddress","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"users","type":"address[]"}],"name":"blacklistAddress","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"constant":false,"inputs":[],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]
+const balance_fetch_contract_abi = [{"constant":true,"inputs":[{"name":"exchange","type":"address"},{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"allBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"exchange","type":"address"},{"name":"users","type":"address[]"},{"name":"tokens","type":"address[]"}],"name":"allBalancesForManyAccounts","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"walletBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"user","type":"address"},{"name":"token","type":"address"}],"name":"tokenBalance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"exchanges","type":"address[]"},{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"multiDeltaBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"exchange","type":"address"},{"name":"user","type":"address"},{"name":"tokens","type":"address[]"}],"name":"deltaBalances","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"destruct","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"token","type":"address"},{"name":"amount","type":"uint256"}],"name":"withdrawToken","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"users","type":"address[]"}],"name":"whitelistAddress","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"users","type":"address[]"}],"name":"blacklistAddress","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"constant":false,"inputs":[],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}];
 // generic abi for fetching symbol from any ERC20 token
 const generic_contract_abi = [ { "constant":true, "inputs":[], "name":"symbol", "outputs":[ { "name":"", "type":"string" } ], "payable":false, "type":"function" } ];
 // get tokens from frontend config JSON and populate token_addresses with addresses
@@ -21,12 +42,503 @@ try {
         "\n Please contact site administrator.");
     console.log(err);
 }
-// TEMP: Tokens for testing
-// var tokens_JSON = JSON.parse('{"tokens": [' +
-//     '{"addr": "0x0000000000000000000000000000000000000000", "name": "ETH", "decimals": 18},' +
-//     '{"addr": "0x8f3470A7388c05eE4e7AF3d01D8C722b0FF52374", "name": "VERI", "decimals": 18},' +
-//     '{"addr": "0x014b50466590340d41307cc54dcee990c8d58aa8", "name": "ICOS", "decimals": 6}' +
-//     ']}').tokens;
+//TEMP============================================================================
+
+// Parent React component that controls window state
+class MigrationTool extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            // Initialize window to -3 (LoadingWindow)
+            user_address: '',
+
+            window: -3,
+
+            balances_fetched: false,
+
+            balances_options: [], // Addresses of tokens with balances for multi-select
+            balances_selected: [], // Addresses of tokens selected by user in multi-select
+
+            tokens_added: [], // Token addresses manually added by users
+
+            orders_options: [],
+            orders_selected: []
+        };
+    };
+
+    /* --- Navigate to next window -- */
+    nextWindow(change_from, change_to) {
+        // If window change_from is balances or orders, remember state of multiselect
+        this.save_ms_state(change_from, change_to);
+        this.load_ms_state(change_to);
+
+        // Change to next window
+        let current_window = this.state.window;
+        if (current_window < 6) {
+            current_window += 1;
+            this.setState({
+                window: current_window
+            });
+        }
+    };
+
+    /* --- Navigate to previous window -- */
+    previousWindow(change_from, change_to) {
+        // If window change_from is balances or orders, remember state of multiselect
+        this.save_ms_state(change_from);
+        this.load_ms_state(change_to);
+
+        // Change to previous window
+        let current_window = this.state.window;
+        if (current_window > 1) {
+            current_window -= 1;
+            this.setState({
+                window: current_window
+            });
+        }
+    };
+
+    /* --- Hides window --- */
+    closeWindow() {
+        document.getElementById('migrationTool').style.display = 'none';
+    }
+
+    /* --- Add user-entered token to selected list --- */
+    add_token() {
+        let address = $('#new-token-addr-input').val().toString();
+        console.log("adding token.." + address);
+        let token_symbol = get_token_symbol(address);
+        let token_balance = get_token_balance(address, this.state.user_address);
+        // Check that token isn't already being displayed
+        let already_displayed = false;
+        let existing_options = this.state.balances_options.concat(this.state.balances_selected);
+        existing_options.forEach(function (existing_addr) {
+            if (existing_addr === address) {
+                alert("Token balance is already listed.");
+                already_displayed = true;
+            }
+        });
+        // Add token to selected
+        if (!already_displayed) {
+            let new_tokens_added = this.state.tokens_added.splice();
+            new_tokens_added.push(address);
+            this.setState({
+                balances_selected: address,
+                tokens_added: new_tokens_added
+            });
+        }
+    }
+
+    /* --- Populates balances_options with fetched balances --- */
+    update_balances() {
+        // Check that balances are only fetched once
+        if (!this.state.balances_fetched) {
+            let temp_addresses = get_balances_options();
+            this.setState({
+                balances_options: temp_addresses,
+                balances_fetched: true
+            });
+        }
+    }
+
+    /* --- Update or initialize balances multiselect --- */
+    update_balances_ms() {
+        $('#ED-migration-balances').multiselect({
+                search: {
+                    left: '<input type="text" name="ED-bal-search" class="form-control" placeholder="Search Ether Balances" />',
+                    right: '<input type="text" name="FD-bal-search" class="form-control" placeholder="Search Fork Balances" />'
+                },
+                fireSearch: function (value) {
+                    return value.length > 1;
+                }
+        });
+    }
+
+    /* --- Update or initialize orders multiselect --- */
+    update_orders_ms() {
+        $('#ED-migration-orders').multiselect({
+            search: {
+                left: '<input type="text" name="ED-bal-search" class="form-control" placeholder="Search Ether Orders" />',
+                right: '<input type="text" name="FD-bal-search" class="form-control" placeholder="Search Fork Orders" />'
+            },
+            fireSearch: function (value) {
+                return value.length > 1;
+            }
+        });
+    }
+
+    /* --- Get the option values in a given multiselect --- */
+    get_ms_selected_values(ms_id) {
+        let selected = [];
+        $(ms_id + ' option').each(function () {
+            selected.push($(this).val());
+        });
+        return selected;
+    }
+
+    save_ms_state(change_from) {
+        // If window change_from is balances, save state of multiselect
+        if (change_from === "balances") {;
+            let remaining_balances = this.get_ms_selected_values('#ED-migration-balances');
+            let selected_balances = this.get_ms_selected_values('#ED-migration-balances_to');
+            this.setState({
+                balances_options: remaining_balances,
+                balances_selected: selected_balances
+            })
+        }
+
+        // If window change_from is orders, save state of multiselect
+        if (change_from === "orders") {
+            let remaining_orders = this.get_ms_selected_values('#ED-migration-orders');
+            let selected_orders = this.get_ms_selected_values('#ED-migration-orders_to');
+            this.setState({
+                orders_options: remaining_orders,
+                orders_selected: selected_orders
+            })
+        }
+    }
+
+    load_ms_state(change_to) {
+        // If window change_from is balances, load state of multiselect
+        if (change_to === "balances") {;
+            this.update_balances_ms();
+        }
+
+        // If window change_from is orders, load state of multiselect
+        if (change_to === "orders") {
+            this.update_orders_ms();
+        }
+    }
+
+    get_user_address() {
+        let user_address_temp = get_user_address();
+        this.setState({
+            user_address: user_address_temp
+        })
+    }
+
+    render() {
+        // Determine current window
+        let current_window;
+        switch (this.state.window) {
+            case -3:
+                current_window = <LoadingWindow/>;
+                break;
+            case -2:
+                current_window = <NoAccountWindow closeWindow={() => this.closeWindow()}/>;
+                break;
+            case -1:
+                current_window = <NoBalancesWindow closeWindow={() => this.closeWindow()}/>;
+                break;
+            case 1:
+                current_window = <IntroductionWindow nextWindow={() => this.nextWindow('', 'balances')}
+                                                     get_user_address={() => this.get_user_address()}
+                                                     user_address={this.state.user_address}/>;
+                break;
+            case 2:
+                current_window = <BalancesWindow nextWindow={() => this.nextWindow("balances", '')}
+                                                 previousWindow={() => this.previousWindow("balances", '')}
+                                                 balances_options={this.state.balances_options}
+                                                 balances_selected={this.state.balances_selected}
+                                                 update_balances={() => this.update_balances()}
+                                                 update_balances_ms={() => this.update_balances_ms()}/>;
+                break;
+            case 3:
+                current_window = <AddBalanceWindow nextWindow={() => this.nextWindow('', 'orders')}
+                                                   previousWindow={() => this.previousWindow('', 'balances')}
+                                                   add_token={() => this.add_token()}
+                                                   tokens_added={this.state.tokens_added}/>;
+                break;
+            case 4:
+                current_window = <OrdersWindow nextWindow={() => this.nextWindow("orders", '')}
+                                               previousWindow={() => this.previousWindow("orders", '')}/>;
+                break;
+            case 5:
+                current_window = <ConfirmationWindow nextWindow={() => this.nextWindow()}
+                                                     previousWindow={() => this.previousWindow('', 'orders')}/>;
+                break;
+            case 6:
+                current_window = <SuccessWindow closeWindow={() => this.closeWindow()}/>;
+                break;
+        }
+
+        return (
+            // Modal body, with interchangeable nested window
+            <div className="migration-overlay" id="migration-modal">
+                <div className="modal-dialog" tabIndex="-1">
+                    {current_window}
+                </div>
+            </div>
+        )
+
+    };
+}
+
+class LoadingWindow extends React.Component {
+    render() {
+        return (<div className="migration-loader">
+            <i className="fa fa-spinner fa-pulse"></i>
+        </div>)
+    }
+}
+
+class NoAccountWindow extends React.Component {
+    render() {
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Migration Tool</h2>
+                    <p>From The EtherDelta's Smart Contract to the Improved ForkDelta Smart Contract </p>
+                </div>
+                <div className="modal-body text-center">
+                    <p><strong> Please select an account to use the migration tool. </strong></p>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.closeWindow}>Close Tool</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+class NoBalancesWindow extends React.Component {
+    render() {
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Migration Tool</h2>
+                    <p>From The EtherDelta's Smart Contract to the Improved ForkDelta Smart Contract </p>
+                </div>
+                <div className="modal-body text-center">
+                    <p><strong> Your account has no balances on the old EtherDelta Smart Contract!</strong></p>
+                    <p> Your selected account has no need of this migration tool. </p>
+                    <p> If you'd like to check another account, return to ForkDelta and select a different account in the top-right. </p>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.closeWindow}>Return to ForkDelta</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+class IntroductionWindow extends React.Component {
+    constructor(props) {
+        super(props);
+        this.props.get_user_address();
+    }
+    render() {
+        let user_addr = this.props.user_address;
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Migration Tool</h2>
+                    <p>From The EtherDelta's Smart Contract to the Improved ForkDelta Smart Contract </p>
+                </div>
+                <div className="modal-body text-center">
+                    <p>This tool is currently checking the following account address: {user_addr}</p>
+                    <p><strong> * Describe the tool and why the transfer is needed here * </strong></p>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.nextWindow}>Proceed</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+class BalancesWindow extends React.Component {
+    constructor(props) {
+        super(props);
+        this.props.update_balances();
+        this.props.update_balances_ms();
+    }
+
+    componentDidUpdate() {
+        this.props.update_balances_ms();
+    }
+
+    render() {
+        //Map balances to options
+        let balances_options_selects = this.props.balances_options.map((token_addr) => {
+            let name = get_token_symbol(token_addr).toString();
+            let balance = get_token_balance(token_addr).toString();
+            return (
+                <Balance key={token_addr}
+                         value={token_addr}
+                         name={name + ":" + balance} />
+            )
+        });
+
+        // Map selected balances to options
+        let balances_selected_selects = this.props.balances_selected.map((token_addr) => {
+            let name = get_token_symbol(token_addr).toString();
+            let balance = get_token_balance(token_addr).toString();
+            return (
+                <Balance key={token_addr}
+                         value={token_addr}
+                         name={name + ":" + balance} />
+            )
+        });
+
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Balances</h2>
+                    <p>Currently on the EtherDelta Contract to be Transferred to the ForkDelta Contract </p>
+                </div>
+                <div className="modal-body text-center">
+                    <div className="container migration-container">
+                        <div className="row">
+                            <h3 className="text-center">EtherDelta Balances</h3>
+                            <div className="col-sm-5">
+                                <label htmlFor="ED-migration-balances">Currently on ED Contract</label>
+                                <select name="ED-bal-from[]" id="ED-migration-balances" className="form-control migrate-ms"
+                                        size="8" multiple="multiple">{balances_options_selects}</select>
+                            </div>
+                            <div className="col-sm-2 ms-buttons">
+                                <button type="button" id="ED-migration-balances_rightAll" className="btn btn-block"><i
+                                    className="fa fa-angle-double-right"></i></button>
+                                <button type="button" id="ED-migration-balances_rightSelected" className="btn btn-block"><i
+                                    className="fa fa-angle-right"></i></button>
+                                <button type="button" id="ED-migration-balances_leftSelected" className="btn btn-block"><i
+                                    className="fa fa-angle-left"></i></button>
+                                <button type="button" id="ED-migration-balances_leftAll" className="btn btn-block"><i
+                                    className="fa fa-angle-double-left"></i></button>
+                            </div>
+                            <div className="col-sm-5">
+                                <label htmlFor="ED-migration-balances_to">Pending Transfer To FD Contract</label>
+                                <select name="ED-bal-to[]" id="ED-migration-balances_to" className="form-control migrate-ms"
+                                        size="8" multiple="multiple">{balances_selected_selects}</select>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.previousWindow}>Previous (Introduction)</button>
+                    <button className="btn btn-default" onClick={this.props.nextWindow}>Next (Add Token)</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+class Balance extends React.Component {
+    render() {
+        return (
+            <option value={this.props.value}>{this.props.name}</option>
+        )
+    }
+}
+
+class AddBalanceWindow extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.handleSubmit = this.handleSubmit.bind(this);
+    }
+
+    handleSubmit(event) {
+        event.preventDefault();
+        this.props.add_token();
+    }
+
+    render() {
+        // Map added tokens to list items
+        let tokens_added_list = this.props.tokens_added.map((token_addr) => {
+            let name = get_token_symbol(token_addr).toString();
+            if (name === "Name Error") {
+                name = "EnteredToken"
+            }
+            let balance = get_token_balance(token_addr).toString();
+            return (
+                <li key={token_addr}><input value={token_addr} type="checkbox">{name} : {balance}</input></li>
+            )
+        });
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Missing A Balance?</h2>
+                    <p>Add Tokens Not Listed With ForkDelta's Tokens</p>
+                </div>
+                <div className="modal-body text-center">
+                    <form id="token-addr-form" onSubmit={this.handleSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="new-token-addr-input">Token Address</label>
+                            <input required size="42" pattern="^0x.{40}$" className="form-control"
+                                   id="new-token-addr-input"
+                                   placeholder="0x0000000000000000000000000000000000000000" />
+                        </div>
+                        <button type="submit" className="btn btn-default">Add token</button>
+                    </form>
+                    <p> You can lookup a token's address at <a href="">EtherScan</a> </p>
+                    <ul className="added-tokens">
+                        {tokens_added_list}
+                    </ul>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.previousWindow}>Previous (Balances)</button>
+                    <button className="btn btn-default" onClick={this.props.nextWindow}>Next (Orders)</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+class OrdersWindow extends React.Component {
+    render() {
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Orders</h2>
+                    <p>Currently on the EtherDelta Contract to be Transferred to the ForkDelta Contract </p>
+                </div>
+                <div className="modal-body text-center">
+                    <p>Orders</p>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.previousWindow}>Previous (Add Token)</button>
+                    <button className="btn btn-default" onClick={this.props.nextWindow}>Next (Confirmation)</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+class ConfirmationWindow extends React.Component {
+    render() {
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Confirmation</h2>
+                </div>
+                <div className="modal-body text-center">
+                    <p>If all the information is correct, begin </p>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.previousWindow}>Previous (Orders)</button>
+                    <button className="btn btn-default" onClick={this.props.nextWindow}>Begin Migration</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+class SuccessWindow extends React.Component {
+    render() {
+        begin_migration();
+        return (
+            <div className="modal-content">
+                <div className="modal-header text-center">
+                    <h2>Progress</h2>
+                    <p>You Can Close This Window and Check Your Progress At Any Time</p>
+                </div>
+                <div className="modal-body text-center">
+                    <p> Progress </p>
+                    <br />
+                    <button className="btn btn-default" onClick={this.props.closeWindow}>Close Migration Tool</button>
+                </div>
+            </div>
+        )
+    }
+}
+
+// React component initialization for front-end of migration tool
+var react_component = ReactDOM.render(<MigrationTool/>, document.getElementById('migrationTool'));
+
 
 // populate token info arrays from JSON
 var token_addresses = [];
@@ -59,120 +571,55 @@ var generic_contract = web3.eth.contract(generic_contract_abi);
 
 // balances and arrays containing options to be displayed in ms
 var balances = {};
-var displayed_balances = [];
-var displayed_orders = [];
+var balances_options = []; // Non-zero balances to be displayed as options for migration
+var orders_options = []; // Orders to be displayed as options for migration
 // options selected by user for migration from ED to FD smart contract
-var selected_balances = [];
-var selected_orders = [];
+var balances_selected = []; // Balances from balances_options selected by user to be migrated
+var orders_selected = []; // Orders from orders_options selected by user to be migrated
 
 // frontend variables
 var ED_balances = $('#ED-migration-balances');
 var ED_orders = $('#ED-migration-orders');
 
 // TEMP: Testing addresses with multiple balances. Interchange with promised_user_addr
-// var user_address = '0xa83adca55ce5d0cc43ba16f4247ca65229a1bfb1';
-var user_address = '0x5902fcFA445E0E78Ab20C394a561292353610774';
+var user_address = '0xa83adca55ce5d0cc43ba16f4247ca65229a1bfb1';
+// var user_address = '0x5902fcFA445E0E78Ab20C394a561292353610774';
+// var user_address;
 
 // call async function to load user address
-var user_address_promise = get_user_addr();
+var user_address_promise = fetch_user_addr();
 
 // once user address loads, check for ED balances and run migration tool if any balances exist for account
-user_address_promise.then(function (promised_user_addr) { // TEMP: change promised_user_addr to user_address to get browser user address
-    console.log("User address loaded: " + user_address);
+user_address_promise.then(function (promised_user_addr) {
+
+    // TEMP: change promised_user_addr to user_address to get browser user address
     // user_address = promised_user_addr;
-    // display user address in header of migration-tool
-    document.getElementById("migration-current-user").innerHTML = "Current user: " + user_address;
+
+    console.log("User address loaded: " + user_address);
+
     // get balances from migration smart contract utility
     fetch_balances(user_address, token_addresses, old_contract);
 
-    // populate balance multiselect with user balances
-    token_addresses_with_balances.forEach(function (token_addr) {
-        let big_number_balance = balances[token_addr];
-        // Convert balance to user-readable decimal notation by looking up the token's decimal
-        let name = token_names[token_addresses.indexOf(token_addr)];
-        let decimals = parseInt(token_decimals[token_addresses.indexOf(token_addr)]);
-        let balance = big_number_to_decimal(big_number_balance, decimals);
-        displayed_balances.push({"addr": token_addr, "name": name, "balance": balance});
-    });
+
 
     // Render migration tool and get orders if user has balances
-    if (displayed_balances.length >= 1) {
+    if (balances_options.length >= 1) {
         console.log("User has balances on ED contract, opening migration tool.");
-        document.getElementById('migration-modal').style.display = 'block';
-        populate_ms_balances(ED_balances, displayed_balances);
-        // TODO: Render HTML with React
 
-        // get orders from redux store
-        let orders_promise = fetch_orders();
+        // Display Migration Tool Component and Change State to introduction
+        document.getElementById('migrationTool').style.display = 'block';
+        change_window(1);
 
-        orders_promise.then(function (orders) {
-            // If there are orders, populate ms
-            if (orders != null && orders.length >= 1) {
-                // populate order multiselect with user orders
-                orders.forEach(function (order) {
-                    // Display all buys first
-                    order.buys.forEach(function (buy) {
-                        // TODO: properly format a buy order for display
-                        displayed_orders.push(buy);
-                    });
-                    // Display sells after buys
-                    order.sells.forEach(function (sell) {
-                        // TODO: properly format a sell order for display
-                        displayed_orders.push(sell);
-                    });
-                });
-                populate_ms_orders(ED_orders, displayed_orders);
-            } else {
-                ED_orders.append("<option value=\"None\"> No Orders </option>");
-                refresh_order_ms(ED_orders);
-            }
-        });
+    } else {
+        // Change window to NoBalancesWindow
+        change_window(-1);
     }
 });
 
 // Front-end event listeners
-
 // nav-bar link to open migration tool
 $('#migrateTool').click(function(event) {
-    document.getElementById('migration-modal').style.display ='block';
-});
-
-// if user enters a new token addr, add token to ms if it isn't already being displayed
-$("#token-addr-form").on("submit", function (event) {
-    event.preventDefault();
-    let token_address = document.getElementById('new-token-addr-input').value;
-    let token_symbol = get_token_symbol(token_address);
-    let token_balance = get_token_balance(token_address, user_address);
-    // Check that token isn't already being displayed
-    let already_displayed = false;
-    displayed_balances.forEach(function (balance) {
-        if (balance['addr'] === token_address) {
-            alert("Token balance is already listed.");
-            already_displayed = true;
-        }
-    });
-    // Add token to displayed array and update the ms with the token's balance
-    if (!already_displayed) {
-        displayed_balances.push({"addr": token_address, "name": token_symbol, "balance": token_balance});
-        populate_ms_balances(ED_balances, [displayed_balances[displayed_balances.length - 1]]);
-        console.log([displayed_balances[displayed_balances.length - 1]]);
-    }
-});
-
-// Begin migration logic if button is clicked and order and/or balances are selected
-$("#begin-migration").click(function (event) {
-    // Get selected orders and balances from multiselects
-    get_selected();
-
-    // If user has selected any balances or orders, migrate them to new contract
-    if (selected_orders.length >= 1 || selected_balances.length >= 1) {
-        begin_migration();
-    } else {
-        alert("No balances or orders selected.")
-    }
-
-    // Close migration tool modal
-    document.getElementById('migration-modal').style.display = 'none';
+    document.getElementById('migrationTool').style.display ='block';
 });
 
 // --- fetch balance and orders ---
@@ -193,6 +640,11 @@ function fetch_balances(user, token_addresses, contract_addr) {
         }
         addr_index++;
     });
+
+    // Populate non-zero options for front-end user to select
+    token_addresses_with_balances.forEach(function (token_addr) {
+        balances_options.push(token_addr);
+    });
 }
 
 async function fetch_orders() {
@@ -207,14 +659,18 @@ async function fetch_orders() {
 
 //--- utils ---
 // get user's current account from redux store after the store loads
-async function get_user_addr() {
+async function fetch_user_addr() {
     if (typeof(window.main.EtherDelta.store.getState().user.accounts[window.main.EtherDelta.store.getState().user.selectedAccount]) !== "undefined") {
         let user_from_store = window.main.EtherDelta.store.getState().user;
         return user_from_store.accounts[user_from_store.selectedAccount].addr;
     } else {
-        console.log("Waiting on store to populate user address...");
+        console.log("Waiting on store to populate user address, or for user to select an account...");
         await sleep(5000);
-        return get_user_addr();
+        if (typeof(window.main.EtherDelta.store.getState().user.accounts[window.main.EtherDelta.store.getState().user.selectedAccount]) === "undefined") {
+            // Change window to NoAccountWindow
+            change_window(-2);
+        }
+        return fetch_user_addr();
     }
 }
 
@@ -225,12 +681,22 @@ function big_number_to_decimal(big_number, token_decimals) {
 
 // gets a token's symbol using a generic contract ABI
 function get_token_symbol(token_address) {
+    // If Ether, return ETH address
     if (token_address === '0x0000000000000000000000000000000000000000') {
         return "ETH";
     }
+
+    // Search tokens for addr to see if token address is already supported in FD config
     try {
+    let addr_index = token_addresses.indexOf(token_address);
+    if (addr_index !== -1) {
+        return token_names[addr_index];
+    }
+
+    // If not supported, lookup symbol with web3 call
+
         let token_contract = generic_contract.at(token_address);
-        return token_contract.symbol();
+        return token_contract.symbol().toString();
     } catch (err) {
         console.log("Error in migrate.js with function get_token_symbol");
         alert("Error fetching token name. Is the token ERC20 compliant?");
@@ -242,10 +708,20 @@ function get_token_symbol(token_address) {
 
 // gets a token's decimals from Etherium call
 function get_token_decimals(token_address) {
+    // If Ether, return ETH decimals
     if (token_address === '0x0000000000000000000000000000000000000000') {
         return 18;
     }
+
+    // Search tokens for addr to see if token address is already supported in FD config
     try {
+    let addr_index = token_addresses.indexOf(token_address);
+    if (addr_index !== -1) {
+        return token_decimals[addr_index];
+    }
+
+    // If not supported, lookup decimals with web3 call
+
         let decimalsCall = {
             to: token_address,
             data: web3.sha3('decimals()').substring(0, 10)
@@ -255,16 +731,19 @@ function get_token_decimals(token_address) {
     } catch (err) {
         console.log("Error in migrate.js with function get_token_decimals");
         alert("Error fetching token decimals. Is the token ERC20 compliant?");
-        console.log(err);
-        return "18";
+        return "0";
     }
 
 
 }
 
-// gets a token's balance from an Etherium call
+// gets an individual token's balance with a web3 call
 function get_token_balance(token_address, user) {
+    // Check to see if balance is already retrieved through smart contract call
     try {
+    if (balances[token_address] > 0) {
+        return big_number_to_decimal(balances[token_address], get_token_decimals(token_address));
+    }
         // grab balance from ED contract
         let big_number_str = ED.balanceOf(token_address, user)['c'];
         console.log("Balance of user entered " + token_address + " is " + big_number_str);
@@ -298,78 +777,31 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// --- Multiselect (ms) functions ---
-// init or refresh balances multiselect
-function refresh_balances_ms(ms) {
-    ms.multiselect({
-        search: {
-            left: '<input type="text" name="ED-bal-search" class="form-control" placeholder="Search Ether Balances" />',
-            right: '<input type="text" name="FD-bal-search" class="form-control" placeholder="Search Fork Balances" />'
-        },
-        fireSearch: function (value) {
-            return value.length > 1;
-        }
-    });
-}
-
-// populate balances of multiselect
-function populate_ms_balances(ms, values) {
-    // Populate ms with options
-    values.forEach(function (value) {
-        ms.append("<option value=\"" + value['addr'] + "\">" + value['name'] + ": " + value['balance'] + "</option>");
-    });
-    refresh_balances_ms(ms); // Refresh display
-}
-
-// init or refresh orders multiselect
-function refresh_order_ms(ms) {
-    ms.multiselect({
-        search: {
-            left: '<input type="text" name="ED-bal-search" class="form-control" placeholder="Search Ether Orders" />',
-            right: '<input type="text" name="FD-bal-search" class="form-control" placeholder="Search Fork Orders" />'
-        },
-        fireSearch: function (value) {
-            return value.length > 1;
-        }
-    });
-}
-
-// populate orders of multiselect
-function populate_ms_orders(ms, values) {
-    values.forEach(function (value) {
-        // TODO: format orders
-        ms.append("<option value=\"" + value + "\">" + order + "</option>");
-    });
-    refresh_order_ms(ms);
-}
-
-// get user-selected option values from multiselect
-function get_ms_selected_values(ms_id) {
-    let selected = [];
-    $(ms_id + ' option').each(function () {
-        selected.push($(this).val());
-    });
-    return selected;
-}
-
-// gets selected orders and balances
-function get_selected() {
-    selected_balances = get_ms_selected_values('#ED-migration-balances_to');
-    selected_orders = get_ms_selected_values('#ED-migration-orders_to');
-}
-
 // --- contract migration logic ---
 function begin_migration() {
     console.log("Begin migration");
     console.log("Selected Balances:");
-    console.log(selected_balances);
+    console.log(balances_selected);
     console.log("Selected Orders:");
-    console.log(selected_orders);
-    if (selected_balances.length >= 1) {
+    console.log(orders_selected);
+    if (balances_selected.length >= 1) {
         // TODO: logic to transfer balances from ED smart contract to FD contract
     }
 
-    if (selected_orders.length >= 1) {
+    if (orders_selected.length >= 1) {
         // TODO: logic to transfer orders from ED smart contract to FD contract
     }
+}
+
+// Change window state from outside of component (useful for when no user account or balances are present)
+function change_window(state) {
+    react_component.setState({window: state});
+}
+
+function get_user_address() {
+    return user_address;
+}
+
+function get_balances_options() {
+    return balances_options;
 }

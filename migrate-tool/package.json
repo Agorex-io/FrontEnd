@@ -4,21 +4,37 @@
   "description": "A Utility that allows ForkDelta users to transfer their orders and balances from the deprecated (**as of date**) ",
   "main": "migrate.js",
   "scripts": {
-    "bundle-js": "browserify migrate.js -o migrate_bundle.js",
-    "server": "./node_modules/http-server/bin/http-server -p 1234 -o"
+    "build": "browserify migrate.js -t [ babelify --comments false ] -o migrate_bundle.js",
+    "run": "./node_modules/http-server/bin/http-server -p 1234 -o"
   },
-  "author": "Evan Bonsignori and Jonathon Dunford",
+  "author": "Evan Bonsignori",
   "license": "ISC",
   "dependencies": {
     "bignumber.js": "^6.0.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
+    "react-select": "^2.0.0-alpha.8",
     "socket.io": "^2.0.4",
-    "unpackjs": "0.0.1",
     "web3": "^0.20.6"
   },
   "devDependencies": {
+    "babel": "^6.23.0",
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "babelify": "^8.0.0",
     "browserify": "^16.1.1",
     "http-server": "^0.11.1"
+  },
+  "babel": {
+    "presets": [
+      "react",
+      "env"
+    ],
+    "plugins": [
+      "transform-runtime"
+    ]
   }
 }
