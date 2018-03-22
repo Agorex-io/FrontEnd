@@ -5,6 +5,8 @@
 const Web3 = require('web3');
 const BN = require('bignumber.js');
 const io = require('socket.io-client');
+
+// React
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -55,6 +57,7 @@ class MigrationTool extends React.Component {
             window: -3,
 
             balances_fetched: false,
+            orders_fetched: false,
 
             balances_options: [], // Addresses of tokens with balances for multi-select
             balances_selected: [], // Addresses of tokens selected by user in multi-select
@@ -105,10 +108,11 @@ class MigrationTool extends React.Component {
 
     /* --- Add user-entered token to selected list --- */
     add_token() {
+        console.log("Fetching information about user entered-token not supported by FD.");
+        // TODO: Fix sloppy practice of using jQuery to access react-rendered element
+        // Get token address from element
         let address = $('#new-token-addr-input').val().toString();
-        console.log("adding token.." + address);
-        let token_symbol = get_token_symbol(address);
-        let token_balance = get_token_balance(address, this.state.user_address);
+
         // Check that token isn't already being displayed
         let already_displayed = false;
         let existing_options = this.state.balances_options.concat(this.state.balances_selected);
@@ -118,13 +122,25 @@ class MigrationTool extends React.Component {
                 already_displayed = true;
             }
         });
-        // Add token to selected
+
+        // Add token to selected and tokens_added in state for updating React component
         if (!already_displayed) {
-            let new_tokens_added = this.state.tokens_added.splice();
-            new_tokens_added.push(address);
+            let new_tokens_added = this.state.tokens_added.concat(address);
+            let new_balances_selected = this.state.balances_selected.concat(address);
             this.setState({
-                balances_selected: address,
+                balances_selected: new_balances_selected,
                 tokens_added: new_tokens_added
+            });
+        }
+    }
+
+    update_orders() {
+        // Check that balances are only fetched once
+        if (!this.state.orders_fetched) {
+            let temp_addresses = get_orders_options();
+            this.setState({
+                orders_options: temp_addresses,
+                orders_fetched: true
             });
         }
     }
@@ -178,7 +194,7 @@ class MigrationTool extends React.Component {
 
     save_ms_state(change_from) {
         // If window change_from is balances, save state of multiselect
-        if (change_from === "balances") {;
+        if (change_from === "balances") {
             let remaining_balances = this.get_ms_selected_values('#ED-migration-balances');
             let selected_balances = this.get_ms_selected_values('#ED-migration-balances_to');
             this.setState({
@@ -194,7 +210,7 @@ class MigrationTool extends React.Component {
             this.setState({
                 orders_options: remaining_orders,
                 orders_selected: selected_orders
-            })
+            });
         }
     }
 
@@ -240,6 +256,7 @@ class MigrationTool extends React.Component {
                                                  previousWindow={() => this.previousWindow("balances", '')}
                                                  balances_options={this.state.balances_options}
                                                  balances_selected={this.state.balances_selected}
+                                                 user_address={this.state.user_address}
                                                  update_balances={() => this.update_balances()}
                                                  update_balances_ms={() => this.update_balances_ms()}/>;
                 break;
@@ -247,11 +264,17 @@ class MigrationTool extends React.Component {
                 current_window = <AddBalanceWindow nextWindow={() => this.nextWindow('', 'orders')}
                                                    previousWindow={() => this.previousWindow('', 'balances')}
                                                    add_token={() => this.add_token()}
-                                                   tokens_added={this.state.tokens_added}/>;
+                                                   tokens_added={this.state.tokens_added}
+                                                   user_address={this.state.user_address}/>;
                 break;
             case 4:
                 current_window = <OrdersWindow nextWindow={() => this.nextWindow("orders", '')}
-                                               previousWindow={() => this.previousWindow("orders", '')}/>;
+                                               previousWindow={() => this.previousWindow("orders", '')}
+                                               orders_options={this.state.balances_options}
+                                               orders_selected={this.state.orders_selected}
+                                               user_address={this.state.user_address}
+                                               update_orders={() => this.update_orders()}
+                                               update_orders_ms={() => this.update_orders_ms()}/>;
                 break;
             case 5:
                 current_window = <ConfirmationWindow nextWindow={() => this.nextWindow()}
@@ -359,22 +382,18 @@ class BalancesWindow extends React.Component {
         //Map balances to options
         let balances_options_selects = this.props.balances_options.map((token_addr) => {
             let name = get_token_symbol(token_addr).toString();
-            let balance = get_token_balance(token_addr).toString();
+            let balance = get_token_balance(token_addr, this.props.user_address).toString();
             return (
-                <Balance key={token_addr}
-                         value={token_addr}
-                         name={name + ":" + balance} />
+                <option key={token_addr} value={token_addr}>{name + ":" + balance}</option>
             )
         });
 
-        // Map selected balances to options
+        // Map selected balances to selected
         let balances_selected_selects = this.props.balances_selected.map((token_addr) => {
             let name = get_token_symbol(token_addr).toString();
-            let balance = get_token_balance(token_addr).toString();
+            let balance = get_token_balance(token_addr, this.props.user_address).toString();
             return (
-                <Balance key={token_addr}
-                         value={token_addr}
-                         name={name + ":" + balance} />
+                <option key={token_addr} value={token_addr}>{name + ":" + balance}</option>
             )
         });
 
@@ -387,7 +406,6 @@ class BalancesWindow extends React.Component {
                 <div className="modal-body text-center">
                     <div className="container migration-container">
                         <div className="row">
-                            <h3 className="text-center">EtherDelta Balances</h3>
                             <div className="col-sm-5">
                                 <label htmlFor="ED-migration-balances">Currently on ED Contract</label>
                                 <select name="ED-bal-from[]" id="ED-migration-balances" className="form-control migrate-ms"
@@ -419,14 +437,6 @@ class BalancesWindow extends React.Component {
     }
 }
 
-class Balance extends React.Component {
-    render() {
-        return (
-            <option value={this.props.value}>{this.props.name}</option>
-        )
-    }
-}
-
 class AddBalanceWindow extends React.Component {
     constructor(props) {
         super(props);
@@ -439,18 +449,31 @@ class AddBalanceWindow extends React.Component {
         this.props.add_token();
     }
 
-    render() {
+    mapAddedTokens() {
+        // If no tokens, display "No Tokens Added"
+        if (this.props.tokens_added.length < 1) {
+            return (<li key={"None"} className="list-group-item">No Tokens Added</li>)
+        }
+
         // Map added tokens to list items
-        let tokens_added_list = this.props.tokens_added.map((token_addr) => {
+        return this.props.tokens_added.map((token_addr) => {
+            // If no added tokens, return list item showing none added
             let name = get_token_symbol(token_addr).toString();
             if (name === "Name Error") {
                 name = "EnteredToken"
             }
-            let balance = get_token_balance(token_addr).toString();
+            let balance = get_token_balance(token_addr, this.props.user_address).toString();
             return (
-                <li key={token_addr}><input value={token_addr} type="checkbox">{name} : {balance}</input></li>
+                <li key={token_addr} className="list-group-item">
+                    <input value={token_addr} type="checkbox" defaultChecked/>{name + ":" + balance}
+                </li>
             )
         });
+    }
+
+    render() {
+        let tokens_added_list= this.mapAddedTokens();
+
         return (
             <div className="modal-content">
                 <div className="modal-header text-center">
@@ -467,8 +490,10 @@ class AddBalanceWindow extends React.Component {
                         </div>
                         <button type="submit" className="btn btn-default">Add token</button>
                     </form>
-                    <p> You can lookup a token's address at <a href="">EtherScan</a> </p>
-                    <ul className="added-tokens">
+                    <h3> Added tokens </h3>
+                    <ul className="list-group">
+                        {/*TODO: Style tokens list*/}
+                        {/*TODO: Loading icon on add new token*/}
                         {tokens_added_list}
                     </ul>
                     <br />
@@ -481,6 +506,16 @@ class AddBalanceWindow extends React.Component {
 }
 
 class OrdersWindow extends React.Component {
+    constructor(props) {
+        super(props);
+        this.props.update_orders();
+        this.props.update_orders_ms();
+    }
+
+    componentDidUpdate() {
+        this.props.update_orders_ms();
+    }
+
     render() {
         return (
             <div className="modal-content">
@@ -489,7 +524,11 @@ class OrdersWindow extends React.Component {
                     <p>Currently on the EtherDelta Contract to be Transferred to the ForkDelta Contract </p>
                 </div>
                 <div className="modal-body text-center">
-                    <p>Orders</p>
+                    <div className="container migration-container">
+                        <div className="row">
+                            <Multiselect />
+                        </div>
+                    </div>
                     <br />
                     <button className="btn btn-default" onClick={this.props.previousWindow}>Previous (Add Token)</button>
                     <button className="btn btn-default" onClick={this.props.nextWindow}>Next (Confirmation)</button>
@@ -500,7 +539,34 @@ class OrdersWindow extends React.Component {
 }
 
 class ConfirmationWindow extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    mapAllSelected() {
+        // If no tokens, display "No Tokens Added"
+        if (this.props.tokens_added.length < 1) {
+            return (<li key={"None"} className="list-group-item">Nothing Selected for Migration...</li>)
+        }
+
+        // Map added tokens to list items
+        return this.props.tokens_added.map((token_addr) => {
+            // If no added tokens, return list item showing none added
+            let name = get_token_symbol(token_addr).toString();
+            if (name === "Name Error") {
+                name = "EnteredToken"
+            }
+            let balance = get_token_balance(token_addr, this.props.user_address).toString();
+            return (
+                <li key={token_addr} className="list-group-item">
+                    <input value={token_addr} type="checkbox" defaultChecked/>{name + ":" + balance}
+                </li>
+            )
+        });
+    }
+
     render() {
+        let all_selected = this.all_selected
         return (
             <div className="modal-content">
                 <div className="modal-header text-center">
@@ -508,6 +574,12 @@ class ConfirmationWindow extends React.Component {
                 </div>
                 <div className="modal-body text-center">
                     <p>If all the information is correct, begin </p>
+                    <h3> Estimated Gas Cost </h3>
+                    <h3> Added tokens </h3>
+                    <ul className="list-group">
+                        {/*TODO: Style list*/}
+                        {all_selected}
+                    </ul>
                     <br />
                     <button className="btn btn-default" onClick={this.props.previousWindow}>Previous (Orders)</button>
                     <button className="btn btn-default" onClick={this.props.nextWindow}>Begin Migration</button>
@@ -519,8 +591,8 @@ class ConfirmationWindow extends React.Component {
 
 class SuccessWindow extends React.Component {
     render() {
-        begin_migration();
         return (
+
             <div className="modal-content">
                 <div className="modal-header text-center">
                     <h2>Progress</h2>
@@ -562,12 +634,17 @@ var ED = ED_contract.at(old_contract);
 // generic contract for fetching any ERC20-compliant contract's symbol (name)
 var generic_contract = web3.eth.contract(generic_contract_abi);
 
-//-- init socket.io objects for fetching orders --
+// -- init socket.io object for fetching orders --
 // var FD = io("https://api.forkdelta.com/");
 // FD.connect();
 //
 // FD.on('connect', function(data) { console.log('connected to FD api'); });
 // FD.on('disconnect', function(data) { console.log('disconnected from FD api'); });
+//
+// var orders = {
+//     	sells:[],
+//     	buys:[]
+// };
 
 // balances and arrays containing options to be displayed in ms
 var balances = {};
@@ -599,8 +676,9 @@ user_address_promise.then(function (promised_user_addr) {
 
     // get balances from migration smart contract utility
     fetch_balances(user_address, token_addresses, old_contract);
-
-
+    // check for orders only for the tokens that users have balances for
+   // TODO: Orders work on node.js locally run file, but return 420 error when fetching from local host
+    // get_orders(user_address, balances_options);
 
     // Render migration tool and get orders if user has balances
     if (balances_options.length >= 1) {
@@ -647,15 +725,35 @@ function fetch_balances(user, token_addresses, contract_addr) {
     });
 }
 
-async function fetch_orders() {
-    if (typeof(window.main.EtherDelta.store.getState().myOrders) !== "undefined") {
-        return window.main.EtherDelta.store.getState().myOrders;
-    } else {
-        console.log("Waiting on store for orders...");
-        await sleep(5000);
-        return fetch_orders();
-    }
-}
+//handle market responses from FD socket io
+// FD.on('market', function(data) {
+//     console.log('returned market');
+//
+//     if (data.hasOwnProperty('myOrders')) {
+//
+//         //add sell orders
+//         if (data.myOrders.hasOwnProperty('sells')) {
+//             data.myOrders.sells.forEach(function(val){
+//                 orders.sells.push(val);
+//             });
+//         }
+//
+//         //add buy orders
+//         if (data.myOrders.hasOwnProperty('buys')) {
+//             data.myOrders.buys.forEach(function(val){
+//                 orders.buys.push(val);
+//             });
+//         }
+//
+//     }
+// });
+//
+// //send messages to FD socket io to see if there are any orders for every token from this user
+// function get_orders(user, tokens) {
+//     tokens.forEach(function(val){
+//         FD.emit('getMarket', {token:val, user:user});
+//     });
+// }
 
 //--- utils ---
 // get user's current account from redux store after the store loads
@@ -746,7 +844,6 @@ function get_token_balance(token_address, user) {
     }
         // grab balance from ED contract
         let big_number_str = ED.balanceOf(token_address, user)['c'];
-        console.log("Balance of user entered " + token_address + " is " + big_number_str);
         // if balances return a split integer, join it into single value
         let big_number = new BN(big_number_str.join(''));
         // return balance in user-readable decimal notation
@@ -804,4 +901,9 @@ function get_user_address() {
 
 function get_balances_options() {
     return balances_options;
+}
+
+function get_orders_options() {
+    // TODO: Populate orders_options
+    return orders_options;
 }

@@ -12,9 +12,12 @@
   "dependencies": {
     "bignumber.js": "^6.0.0",
     "react": "^16.2.0",
+    "react-bootstrap-multiselect": "^2.4.1",
     "react-dom": "^16.2.0",
     "react-select": "^2.0.0-alpha.8",
+    "react-select-multi": "^1.6.2",
     "socket.io": "^2.0.4",
+    "socket.io-client": "^2.0.4",
     "web3": "^0.20.6"
   },
   "devDependencies": {
