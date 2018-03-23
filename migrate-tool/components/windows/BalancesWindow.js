@@ -1,35 +1,25 @@
 import React from 'react';
+import Balance from '../Balance'
 
 class BalancesWindow extends React.Component {
     constructor(props) {
         super(props);
-        this.props.update_balances();
-        this.props.update_balances_ms();
+
     }
 
-    componentDidUpdate() {
-        this.props.update_balances_ms();
+    populateBalanceOptions() {
+        return this.props.balances_options.map((balance, index) => {
+            return (
+                <Balance
+                    onChange={() => this.props.onBalanceSelect(index)}
+                    checked={balance.is_selected}
+                    key={balance.addr}
+                    label={balance.name + ":" + balance.balance}/>
+            )
+        });
     }
 
     render() {
-        //Map balances to options
-        let balances_options_selects = this.props.balances_options.map((token_addr) => {
-            let name = get_token_symbol(token_addr).toString();
-            let balance = get_token_balance(token_addr, this.props.user_address).toString();
-            return (
-                <option key={token_addr} value={token_addr}>{name + ":" + balance}</option>
-            )
-        });
-
-        // Map selected balances to selected
-        let balances_selected_selects = this.props.balances_selected.map((token_addr) => {
-            let name = get_token_symbol(token_addr).toString();
-            let balance = get_token_balance(token_addr, this.props.user_address).toString();
-            return (
-                <option key={token_addr} value={token_addr}>{name + ":" + balance}</option>
-            )
-        });
-
         return (
             <div className="modal-content">
                 <div className="modal-header text-center">
@@ -39,31 +29,27 @@ class BalancesWindow extends React.Component {
                 <div className="modal-body text-center">
                     <div className="container migration-container">
                         <div className="row">
-                            <div className="col-sm-5">
-                                <label htmlFor="ED-migration-balances">Currently on ED Contract</label>
-                                <select name="ED-bal-from[]" id="ED-migration-balances" className="form-control migrate-ms"
-                                        size="8" multiple="multiple">{balances_options_selects}</select>
-                            </div>
-                            <div className="col-sm-2 ms-buttons">
-                                <button type="button" id="ED-migration-balances_rightAll" className="btn btn-block"><i
-                                    className="fa fa-angle-double-right"></i></button>
-                                <button type="button" id="ED-migration-balances_rightSelected" className="btn btn-block"><i
-                                    className="fa fa-angle-right"></i></button>
-                                <button type="button" id="ED-migration-balances_leftSelected" className="btn btn-block"><i
-                                    className="fa fa-angle-left"></i></button>
-                                <button type="button" id="ED-migration-balances_leftAll" className="btn btn-block"><i
-                                    className="fa fa-angle-double-left"></i></button>
-                            </div>
-                            <div className="col-sm-5">
-                                <label htmlFor="ED-migration-balances_to">Pending Transfer To FD Contract</label>
-                                <select name="ED-bal-to[]" id="ED-migration-balances_to" className="form-control migrate-ms"
-                                        size="8" multiple="multiple">{balances_selected_selects}</select>
-                            </div>
+                            <ul>
+                                {this.populateBalanceOptions()}
+                            </ul>
+                        </div>
+                        <div className="row">
+                            <h2>Missing A Balance?</h2>
+                            <p>Add Tokens Not Listed With ForkDelta's Tokens</p>
+                            <form id="token-addr-form" onSubmit={this.props.handleTokenAdd}>
+                                <div className="form-group">
+                                    <label htmlFor="new-token-addr-input">Token Address</label>
+                                    <input required size="42" pattern="^0x.{40}$" className="form-control"
+                                           id="new-token-addr-input"
+                                           placeholder="0x0000000000000000000000000000000000000000" />
+                                </div>
+                                <button type="submit" className="btn btn-default">Add token</button>
+                            </form>
                         </div>
                     </div>
                     <br />
                     <button className="btn btn-default" onClick={this.props.previousWindow}>Previous (Introduction)</button>
-                    <button className="btn btn-default" onClick={this.props.nextWindow}>Next (Add Token)</button>
+                    <button className="btn btn-default" onClick={this.props.nextWindow}>Next (Orders)</button>
                 </div>
             </div>
         )

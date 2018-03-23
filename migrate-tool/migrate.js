@@ -46,7 +46,260 @@ try {
 }
 //TEMP============================================================================
 
-import Application from './components/Application';
+// -- init socket.io object for fetching orders --
+var FD = io("http://api.localhost:8080/");
+FD.connect();
+
+FD.on('connect', function(data) { console.log('connected to FD api'); });
+FD.on('disconnect', function(data) { console.log('disconnected from FD api'); });
+
+
+import BalancesWindow from './components/windows/BalancesWindow'
+import ConfirmationWindow from './components/windows/ConfirmationWindow'
+import IntroductionWindow from './components/windows/IntroductionWindow'
+import LoadingWindow from './components/windows/LoadingWindow'
+import NoAccountWindow from './components/windows/NoAccountWindow'
+import NoBalancesWindow from './components/windows/NoBalancesWindow'
+import OrdersWindow from './components/windows/OrdersWindow'
+import SuccessWindow from './components/windows/SuccessWindow'
+
+// Parent React component that controls window state
+class Application extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            user_address: '',
+
+            // Initialize window to -3 (LoadingWindow)
+            window: -3,
+
+            balances_fetched: false,
+
+            order_fetched_progress: 0,
+            order_fetches_needed: 0,
+
+            balances_options: [],
+
+            orders_buy_options: [],
+            orders_sell_options: [],
+
+            estimated_gas: 0
+        };
+
+        // Listen for market response and update buy and sells if there is one
+        FD.on('market', function(data) {
+            console.log('returned market');
+
+            if (data.hasOwnProperty('myOrders')) {
+                console.log('has order!' + data.myOrders);
+                //add sell orders
+                let sells = [];
+                if (data.myOrders.hasOwnProperty('sells')) {
+                    data.myOrders.sells.forEach(function(val){
+                        // TODO: Format sell order before pushing
+                        sells.push(val);
+                    });
+                }
+
+                //add buy orders
+                let buys = [];
+                if (data.myOrders.hasOwnProperty('buys')) {
+                    data.myOrders.buys.forEach(function(val){
+                        buys.push(val);
+                    });
+                }
+
+                let new_sells = this.state.orders_sell_options.concat(sells);
+                let new_buys = this.state.orders_sell_options.concat(buys);
+
+                this.setState({
+                    orders_sell_options: new_sells,
+                    orders_buy_options: new_buys,
+                    order_fetched_progress: this.state.order_fetched_progress + 1
+                })
+
+            }
+        });
+    };
+
+    /* --- Navigate to next window -- */
+    nextWindow(change_from, change_to) {
+        let current_window = this.state.window;
+        if (current_window < 5) {
+            current_window += 1;
+            this.setState({
+                window: current_window
+            });
+        }
+    };
+
+    /* --- Navigate to previous window -- */
+    previousWindow(change_from, change_to) {
+        let current_window = this.state.window;
+        if (current_window > 1) {
+            current_window -= 1;
+            this.setState({
+                window: current_window
+            });
+        }
+    };
+
+    /* --- Hides window --- */
+    closeWindow() {
+        document.getElementById('migrationTool').style.display = 'none';
+    }
+
+    /* --- Add user-entered token to selected list --- */
+    add_token(event) {
+        event.preventDefault();
+
+        // Get token address from DOM to let form submit go through validation rather than using onChange on input form
+        let token_address = $('#new-token-addr-input').val();
+        console.log("Fetching details for user entered-token: " + token_address);
+
+        // Check that token isn't already being displayed
+        let already_displayed = false;
+        this.state.balances_options.forEach(function (balance) {
+            if (balance.addr === token_address) {
+                alert("Token balance is already listed.");
+                already_displayed = true;
+            }
+        });
+
+        // Add token to selected and tokens_added in state for updating React component
+        if (!already_displayed) {
+            let name = get_token_symbol(token_address);
+            if (name === "Name Error") // If unable to fetch name from generic Web3 call, use token address
+                name = token_address;
+            let balance = get_token_balance(token_address, this.state.user_address);
+
+            let balances_updated = this.state.balances_options.concat(
+                {addr: token_address, name: name, balance: balance, is_selected: true}
+            );
+            this.setState({
+                balances_options: balances_updated,
+            });
+        }
+    }
+
+    fetch_populated_orders() {
+        // Check that balances are only fetched once
+        if (!this.state.orders_fetched) {
+            let temp_addresses = get_orders_options();
+            this.setState({
+                orders_options: temp_addresses,
+                orders_fetched: true
+            });
+        }
+    }
+
+    /* --- One time populate of balances_options with fetched balances from out code --- */
+    fetch_populated_balances() {
+        // Check that balances are only fetched once
+        if (!this.state.balances_fetched) {
+            let temp_addresses = get_balances_options();
+            let order_fetches_needed = temp_addresses.length;
+            this.setState({
+                balances_options: temp_addresses,
+                balances_fetched: true,
+                order_fetches_needed: order_fetches_needed
+            });
+
+            // Begin fetching orders
+            let user_address = this.state.user_address;
+            this.state.balances_options.forEach(function(val){
+                //send messages to FD socket io to see if there are any orders for every token from this user
+                FD.emit('getMarket', {token:val, user: user_address});
+            });
+        }
+    }
+
+    get_user_address() {
+        let user_address_temp = get_user_address();
+        this.setState({
+            user_address: user_address_temp
+        })
+    }
+
+    // Toggle balance selected
+    on_balance_select(index) {
+        console.log(index);
+        let balances_updated = this.state.balances_options;
+        balances_updated[index].is_selected = !balances_updated[index].is_selected;
+        this.setState({balances_options: balances_updated});
+    }
+
+    estimate_gas() {
+        let all_options = this.state.balances_options.concat(this.state.orders_buy_options)
+                                                     .concat(this.state.orders_sell_options);
+        all_options.forEach(function(option) {
+            let new_estimated_gas = this.state.estimated_gas;
+            new_estimated_gas += web3.eth.estimateGas({from: web3.eth.accounts[0], to: new_contract, amount: web3.toWei(1, "ether")}
+            this.setState({estimated_gas: new_estimated_gas});
+        });
+    }
+
+    // --- contract migration logic ---
+    begin_migration() {
+        console.log("Begin migration");
+    }
+
+    render() {
+        // Determine current window
+        let current_window;
+        switch (this.state.window) {
+            case -3:
+                current_window = <LoadingWindow/>;
+                break;
+            case -2:
+                current_window = <NoAccountWindow closeWindow={() => this.closeWindow()}/>;
+                break;
+            case -1:
+                current_window = <NoBalancesWindow closeWindow={() => this.closeWindow()}/>;
+                break;
+            case 1:
+                current_window = <IntroductionWindow nextWindow={() => this.nextWindow('', 'balances')}
+                                                     get_user_address={() => this.get_user_address()}
+                                                     user_address={this.state.user_address}/>;
+                break;
+            case 2:
+                current_window = <BalancesWindow nextWindow={() => this.nextWindow("balances", '')}
+                                                 previousWindow={() => this.previousWindow("balances", '')}
+                                                 balances_options={this.state.balances_options}
+                                                 balances_selected={this.state.balances_selected}
+                                                 user_address={this.state.user_address}
+                                                 onBalanceSelect={index => this.on_balance_select(index)}
+                                                 handleTokenAdd={(e) => this.add_token(e)}/>;
+                break;
+            case 3:
+                current_window = <OrdersWindow nextWindow={() => this.nextWindow("orders", '')}
+                                               previousWindow={() => this.previousWindow("orders", '')}
+                                               orders_buy_options={this.state.orders_buy_options}
+                                               orders_sell_options={this.state.orders_sell_options}
+                                               user_address={this.state.user_address}/>;
+                break;
+            case 4:
+                current_window = <ConfirmationWindow nextWindow={() => this.nextWindow()}
+                                                     previousWindow={() => this.previousWindow('', 'orders')}
+                                                     estimated_gas={this.state.estimated_gas}/>;
+                break;
+            case 5:
+                current_window = <SuccessWindow closeWindow={() => this.closeWindow()}
+                                                begin_migration={() => this.begin_migration()}/>;
+                break;
+        }
+
+        return (
+            // Modal body, with interchangeable nested window
+            <div className="migration-overlay" id="migration-modal">
+                <div className="modal-dialog" tabIndex="-1">
+                    {current_window}
+                </div>
+            </div>
+        )
+
+    };
+}
 
 
 // React component initialization for front-end of migration tool
@@ -69,23 +322,14 @@ var web3 = new Web3(new Web3.providers.HttpProvider(rpc_api_provider));
 // utility balance-fetching smart contract
 let balance_fetch_contract = web3.eth.contract(balance_fetch_contract_abi);
 var balance_fetch = balance_fetch_contract.at(balance_fetch_contract_addr);
+
 // old EtherDelta smart contract, URL: https://github.com/etherdelta/smart_contract
 let ED_contract = web3.eth.contract(old_contract_abi);
 var ED = ED_contract.at(old_contract);
+
 // generic contract for fetching any ERC20-compliant contract's symbol (name)
 var generic_contract = web3.eth.contract(generic_contract_abi);
 
-// -- init socket.io object for fetching orders --
-// var FD = io("https://api.forkdelta.com/");
-// FD.connect();
-//
-// FD.on('connect', function(data) { console.log('connected to FD api'); });
-// FD.on('disconnect', function(data) { console.log('disconnected from FD api'); });
-//
-// var orders = {
-//     	sells:[],
-//     	buys:[]
-// };
 
 // balances and arrays containing options to be displayed in ms
 var balances = {};
@@ -100,8 +344,9 @@ var ED_balances = $('#ED-migration-balances');
 var ED_orders = $('#ED-migration-orders');
 
 // TEMP: Testing addresses with multiple balances. Interchange with promised_user_addr
-var user_address = '0xa83adca55ce5d0cc43ba16f4247ca65229a1bfb1';
-// var user_address = '0x5902fcFA445E0E78Ab20C394a561292353610774';
+// var user_address = "0xa318f2e298a86d07144cc46d00e29b5fe9385df7";
+// var user_address = '0xa83adca55ce5d0cc43ba16f4247ca65229a1bfb1';
+var user_address = '0x5902fcFA445E0E78Ab20C394a561292353610774';
 // var user_address;
 
 // call async function to load user address
@@ -163,39 +408,11 @@ function fetch_balances(user, token_addresses, contract_addr) {
 
     // Populate non-zero options for front-end user to select
     token_addresses_with_balances.forEach(function (token_addr) {
-        balances_options.push(token_addr);
+        let name = get_token_symbol(token_addr);
+        let balance = get_token_balance(token_addr, user);
+        balances_options.push({"addr": token_addr, "name": name, "balance": balance, "is_selected": true});
     });
 }
-
-//handle market responses from FD socket io
-// FD.on('market', function(data) {
-//     console.log('returned market');
-//
-//     if (data.hasOwnProperty('myOrders')) {
-//
-//         //add sell orders
-//         if (data.myOrders.hasOwnProperty('sells')) {
-//             data.myOrders.sells.forEach(function(val){
-//                 orders.sells.push(val);
-//             });
-//         }
-//
-//         //add buy orders
-//         if (data.myOrders.hasOwnProperty('buys')) {
-//             data.myOrders.buys.forEach(function(val){
-//                 orders.buys.push(val);
-//             });
-//         }
-//
-//     }
-// });
-//
-// //send messages to FD socket io to see if there are any orders for every token from this user
-// function get_orders(user, tokens) {
-//     tokens.forEach(function(val){
-//         FD.emit('getMarket', {token:val, user:user});
-//     });
-// }
 
 //--- utils ---
 // get user's current account from redux store after the store loads
@@ -316,24 +533,11 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// --- contract migration logic ---
-function begin_migration() {
-    console.log("Begin migration");
-    console.log("Selected Balances:");
-    console.log(balances_selected);
-    console.log("Selected Orders:");
-    console.log(orders_selected);
-    if (balances_selected.length >= 1) {
-        // TODO: logic to transfer balances from ED smart contract to FD contract
-    }
-
-    if (orders_selected.length >= 1) {
-        // TODO: logic to transfer orders from ED smart contract to FD contract
-    }
-}
-
 // Change window state from outside of component (useful for when no user account or balances are present)
 function change_window(state) {
+    if (state == 1) {
+        react_component.fetch_populated_balances();
+    }
     react_component.setState({window: state});
 }
 
