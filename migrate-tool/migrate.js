@@ -46,13 +46,6 @@ try {
 }
 //TEMP============================================================================
 
-// -- init socket.io object for fetching orders --
-var FD = io("http://api.localhost:8080/");
-FD.connect();
-
-FD.on('connect', function(data) { console.log('connected to FD api'); });
-FD.on('disconnect', function(data) { console.log('disconnected from FD api'); });
-
 
 import BalancesWindow from './components/windows/BalancesWindow'
 import ConfirmationWindow from './components/windows/ConfirmationWindow'
@@ -68,10 +61,10 @@ class Application extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            user_address: '',
+            // Initialize window to -2 (NoAccountWindow)
+            window: -2,
 
-            // Initialize window to -3 (LoadingWindow)
-            window: -3,
+            user_address: '',
 
             balances_fetched: false,
 
@@ -86,44 +79,24 @@ class Application extends React.Component {
             estimated_gas: 0
         };
 
-        // Listen for market response and update buy and sells if there is one
-        FD.on('market', function(data) {
-            console.log('returned market');
+        // Bind socket handler function
+        this.handle_order_fetch = this.handle_order_fetch.bind(this);
 
-            if (data.hasOwnProperty('myOrders')) {
-                console.log('has order!' + data.myOrders);
-                //add sell orders
-                let sells = [];
-                if (data.myOrders.hasOwnProperty('sells')) {
-                    data.myOrders.sells.forEach(function(val){
-                        // TODO: Format sell order before pushing
-                        sells.push(val);
-                    });
-                }
-
-                //add buy orders
-                let buys = [];
-                if (data.myOrders.hasOwnProperty('buys')) {
-                    data.myOrders.buys.forEach(function(val){
-                        buys.push(val);
-                    });
-                }
-
-                let new_sells = this.state.orders_sell_options.concat(sells);
-                let new_buys = this.state.orders_sell_options.concat(buys);
-
-                this.setState({
-                    orders_sell_options: new_sells,
-                    orders_buy_options: new_buys,
-                    order_fetched_progress: this.state.order_fetched_progress + 1
-                })
-
-            }
+        // -- init socket.io for fetching orders --
+        const socket_addr = "https://api.forkdelta.com";
+        this.FD = io.connect(socket_addr, {
+            transports: ['websocket'],
         });
+
+        this.FD.on('connect', function(data) { console.log('connected to FD api'); });
+        this.FD.on('disconnect', function(data) { console.log('disconnected from FD api'); });
+
+        // Listen for market response and update buy and sells if there is one
+        this.FD.on('market', this.handle_order_fetch);
     };
 
     /* --- Navigate to next window -- */
-    nextWindow(change_from, change_to) {
+    nextWindow() {
         let current_window = this.state.window;
         if (current_window < 5) {
             current_window += 1;
@@ -134,7 +107,7 @@ class Application extends React.Component {
     };
 
     /* --- Navigate to previous window -- */
-    previousWindow(change_from, change_to) {
+    previousWindow() {
         let current_window = this.state.window;
         if (current_window > 1) {
             current_window -= 1;
@@ -182,19 +155,11 @@ class Application extends React.Component {
         }
     }
 
-    fetch_populated_orders() {
-        // Check that balances are only fetched once
-        if (!this.state.orders_fetched) {
-            let temp_addresses = get_orders_options();
-            this.setState({
-                orders_options: temp_addresses,
-                orders_fetched: true
-            });
-        }
-    }
-
     /* --- One time populate of balances_options with fetched balances from out code --- */
-    fetch_populated_balances() {
+    fetch_user_balances_and_orders() {
+        // Fetch user address
+        this.get_user_address();
+
         // Check that balances are only fetched once
         if (!this.state.balances_fetched) {
             let temp_addresses = get_balances_options();
@@ -205,12 +170,67 @@ class Application extends React.Component {
                 order_fetches_needed: order_fetches_needed
             });
 
-            // Begin fetching orders
-            let user_address = this.state.user_address;
-            this.state.balances_options.forEach(function(val){
-                //send messages to FD socket io to see if there are any orders for every token from this user
-                FD.emit('getMarket', {token:val, user: user_address});
+            // Fetch orders
+            let user_addr = this.state.user_address.toString();
+            let FD = this.FD;
+            this.state.balances_options.forEach(function(balance) {
+                // Emit getMarket API call to FD socket to get user orders
+                FD.emit('getMarket', {token: balance.addr, user: user_addr});
             });
+
+        }
+    }
+
+    /* TODO: Takes too long loop through all supported tokens
+    * Current Method: loops though the tokens for which user has balances and checks for orders
+    * Solution Ideas:
+    * 1. Change API to give all orders for a given user, so that only user can be
+    * passed to the API instead of user + token (has to be both or neither, API docs should
+    * update this, because current explanation isn't clear on this
+    *
+    * 2. Prompt user to enter token address of any orders that are missing
+     */
+
+    handle_order_fetch(data) {
+        console.log('Returned market from ForkDelta API');
+
+        if (data.hasOwnProperty('myOrders')) {
+            //add sell orders
+            let sells = [];
+            if (data.myOrders.hasOwnProperty('sells')) {
+                data.myOrders.sells.forEach(function(val){
+                    // Order selected for migration by default
+                    val['is_selected'] = true;
+                    // Get token symbols for displaying orders
+                    val['tokenGetName'] = get_token_symbol(val.tokenGet);
+                    val['tokenGiveName'] = get_token_symbol(val.tokenGive);
+                    sells.push(val);
+                });
+            }
+
+            //add buy orders
+            let buys = [];
+            if (data.myOrders.hasOwnProperty('buys')) {
+                data.myOrders.buys.forEach(function(val){
+                    // Order selected for migration by default
+                    val['is_selected'] = true;
+                    // Get token symbols for displaying orders
+                    val['tokenGetName'] = get_token_symbol(val.tokenGet);
+                    val['tokenGiveName'] = get_token_symbol(val.tokenGive);
+                    buys.push(val);
+                });
+            }
+
+            let new_sells = this.state.orders_sell_options.concat(sells);
+            let new_buys = this.state.orders_sell_options.concat(buys);
+            let incremented_fetched = this.state.order_fetched_progress + 1;
+
+            this.setState({
+                orders_sell_options: new_sells,
+                orders_buy_options: new_buys,
+                order_fetched_progress: incremented_fetched
+            });
+
         }
     }
 
@@ -223,23 +243,38 @@ class Application extends React.Component {
 
     // Toggle balance selected
     on_balance_select(index) {
-        console.log(index);
         let balances_updated = this.state.balances_options;
         balances_updated[index].is_selected = !balances_updated[index].is_selected;
         this.setState({balances_options: balances_updated});
     }
 
+    // Toggle sell order selected
+    on_order_sell_select(index) {
+        let sells_updated = this.state.orders_sell_options;
+        sells_updated[index].is_selected = !sells_updated[index].is_selected;
+        this.setState({orders_sell_options: sells_updated});
+    }
+
+    // Toggle buy order selected
+    on_order_buy_select(index) {
+        let buys_updated = this.state.orders_buy_options;
+        buys_updated[index].is_selected = !buys_updated[index].is_selected;
+        this.setState({orders_buy_options: buys_updated});
+    }
+
+    // TODO: Estimate gas. Would it be better to create helper / utility contract that migrates everything?
     estimate_gas() {
         let all_options = this.state.balances_options.concat(this.state.orders_buy_options)
                                                      .concat(this.state.orders_sell_options);
         all_options.forEach(function(option) {
             let new_estimated_gas = this.state.estimated_gas;
-            new_estimated_gas += web3.eth.estimateGas({from: web3.eth.accounts[0], to: new_contract, amount: web3.toWei(1, "ether")}
+            web3.estim
+            new_estimated_gas += 1;
             this.setState({estimated_gas: new_estimated_gas});
         });
     }
 
-    // --- contract migration logic ---
+    // TODO: contract migration logic. Helper / utility contract?
     begin_migration() {
         console.log("Begin migration");
     }
@@ -248,9 +283,6 @@ class Application extends React.Component {
         // Determine current window
         let current_window;
         switch (this.state.window) {
-            case -3:
-                current_window = <LoadingWindow/>;
-                break;
             case -2:
                 current_window = <NoAccountWindow closeWindow={() => this.closeWindow()}/>;
                 break;
@@ -258,29 +290,29 @@ class Application extends React.Component {
                 current_window = <NoBalancesWindow closeWindow={() => this.closeWindow()}/>;
                 break;
             case 1:
-                current_window = <IntroductionWindow nextWindow={() => this.nextWindow('', 'balances')}
+                current_window = <IntroductionWindow nextWindow={() => this.nextWindow()}
                                                      get_user_address={() => this.get_user_address()}
                                                      user_address={this.state.user_address}/>;
                 break;
             case 2:
-                current_window = <BalancesWindow nextWindow={() => this.nextWindow("balances", '')}
-                                                 previousWindow={() => this.previousWindow("balances", '')}
+                current_window = <BalancesWindow nextWindow={() => this.nextWindow()}
+                                                 previousWindow={() => this.previousWindow()}
                                                  balances_options={this.state.balances_options}
                                                  balances_selected={this.state.balances_selected}
-                                                 user_address={this.state.user_address}
                                                  onBalanceSelect={index => this.on_balance_select(index)}
                                                  handleTokenAdd={(e) => this.add_token(e)}/>;
                 break;
             case 3:
-                current_window = <OrdersWindow nextWindow={() => this.nextWindow("orders", '')}
-                                               previousWindow={() => this.previousWindow("orders", '')}
+                current_window = <OrdersWindow nextWindow={() => this.nextWindow()}
+                                               previousWindow={() => this.previousWindow()}
                                                orders_buy_options={this.state.orders_buy_options}
                                                orders_sell_options={this.state.orders_sell_options}
-                                               user_address={this.state.user_address}/>;
+                                               onSellSelect={index => this.on_order_sell_select(index)}
+                                               onBuySelect={index => this.on_order_buy_select(index)}/>;
                 break;
             case 4:
                 current_window = <ConfirmationWindow nextWindow={() => this.nextWindow()}
-                                                     previousWindow={() => this.previousWindow('', 'orders')}
+                                                     previousWindow={() => this.previousWindow()}
                                                      estimated_gas={this.state.estimated_gas}/>;
                 break;
             case 5:
@@ -334,51 +366,41 @@ var generic_contract = web3.eth.contract(generic_contract_abi);
 // balances and arrays containing options to be displayed in ms
 var balances = {};
 var balances_options = []; // Non-zero balances to be displayed as options for migration
-var orders_options = []; // Orders to be displayed as options for migration
-// options selected by user for migration from ED to FD smart contract
-var balances_selected = []; // Balances from balances_options selected by user to be migrated
-var orders_selected = []; // Orders from orders_options selected by user to be migrated
 
 // frontend variables
 var ED_balances = $('#ED-migration-balances');
 var ED_orders = $('#ED-migration-orders');
 
-// TEMP: Testing addresses with multiple balances. Interchange with promised_user_addr
-// var user_address = "0xa318f2e298a86d07144cc46d00e29b5fe9385df7";
-// var user_address = '0xa83adca55ce5d0cc43ba16f4247ca65229a1bfb1';
-var user_address = '0x5902fcFA445E0E78Ab20C394a561292353610774';
-// var user_address;
-
-// call async function to load user address
-// TEMP: Just loading user address
+// Get selected user_account
+// TODO: Listen for user account change
 // var user_address_promise = fetch_user_addr();
+// var user_address = '0xB9117FBbC2692AA305187267A97F3c0c9eD85471';
+// var user_address = '0x0b419bce1cb87adea84a913fa903593fb68d33b1';
+// TEMP: Using custom address
+var user_address = '0xe65114e81c72be5a1dd64d661ff0965eb050d507';
+// If user address is selected
 
-// once user address loads, check for ED balances and run migration tool if any balances exist for account
-// user_address_promise.then(function (promised_user_addr) {
+// user_address_promise.then(function (user_addr_resolved) {
+//     user_address = user_addr_resolved;
 
-    // TEMP: change promised_user_addr to user_address to get browser user address
-    // user_address = promised_user_addr;
-
-    console.log("User address loaded: " + user_address);
-
-    // get balances from migration smart contract utility
+    // get balances
     fetch_balances(user_address, token_addresses, old_contract);
-    // check for orders only for the tokens that users have balances for
-   // TODO: Orders work on node.js locally run file, but return 420 error when fetching from local host
-    // get_orders(user_address, balances_options);
 
-    // Render migration tool and get orders if user has balances
+    // If user has balances change React window and open migration tool
     if (balances_options.length >= 1) {
         console.log("User has balances on ED contract, opening migration tool.");
 
-        // Display Migration Tool Component and Change State to introduction
-        document.getElementById('migrationTool').style.display = 'block';
+        // Change window
         change_window(1);
 
-    } else {
-        // Change window to NoBalancesWindow.js
+        // Display Migration Tool
+        document.getElementById('migrationTool').style.display = 'block';
+
+    } else   {
+        // Show no balances window
         change_window(-1);
     }
+
 // });
 
 // Front-end event listeners
@@ -444,14 +466,13 @@ function get_token_symbol(token_address) {
     }
 
     // Search tokens for addr to see if token address is already supported in FD config
-    try {
     let addr_index = token_addresses.indexOf(token_address);
     if (addr_index !== -1) {
         return token_names[addr_index];
     }
 
-    // If not supported, lookup symbol with web3 call
-
+     // If not supported, lookup symbol with web3 call
+    try {
         let token_contract = generic_contract.at(token_address);
         return token_contract.symbol().toString();
     } catch (err) {
@@ -471,14 +492,13 @@ function get_token_decimals(token_address) {
     }
 
     // Search tokens for addr to see if token address is already supported in FD config
-    try {
     let addr_index = token_addresses.indexOf(token_address);
     if (addr_index !== -1) {
         return token_decimals[addr_index];
     }
 
     // If not supported, lookup decimals with web3 call
-
+    try {
         let decimalsCall = {
             to: token_address,
             data: web3.sha3('decimals()').substring(0, 10)
@@ -536,20 +556,18 @@ function sleep(ms) {
 // Change window state from outside of component (useful for when no user account or balances are present)
 function change_window(state) {
     if (state == 1) {
-        react_component.fetch_populated_balances();
+        // If state is switching to 1, then user address is loaded and balances can be fetched
+        react_component.fetch_user_balances_and_orders();
     }
     react_component.setState({window: state});
 }
 
+// Returns user address to React scope
 function get_user_address() {
     return user_address;
 }
 
+// Returns balance options to React scope
 function get_balances_options() {
     return balances_options;
-}
-
-function get_orders_options() {
-    // TODO: Populate orders_options
-    return orders_options;
 }

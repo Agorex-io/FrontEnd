@@ -9,12 +9,13 @@ class OrdersWindow extends React.Component {
     populateBuyOrders() {
         return this.props.orders_buy_options.map((order, index) => {
             return (
-                // TODO: Format what is shown in orders
+                // TODO: IMPORTANT! Make sure this is formatted correctly
                 <Order
-                    onChange={() => this.props.onOrderSelect(index)}
+                    onChange={() => this.props.on_order_sell_select(index)}
                     checked={order.is_selected}
                     key={order.id}
-                    label={order.name + ":" + order.balance}/>
+                    label={order.tokenGive + order.tokenGiveName + " for "
+                    + order.tokenGet + " of your " + order.tokenGetName}/>
             )
         });
     }
@@ -23,10 +24,11 @@ class OrdersWindow extends React.Component {
         return this.props.orders_sell_options.map((order, index) => {
             return (
                 <Order
-                    onChange={() => this.props.onOrderSelect(index)}
+                    onChange={() => this.props.on_order_sell_select(index)}
                     checked={order.is_selected}
                     key={order.id}
-                    label={order.name + ":" + order.balance}/>
+                    label={order.amountGet + order.tokenGetName + " for "
+                    + order.tokenGive + " of your " + order.tokenGiveName}/>
             )
         });
     }

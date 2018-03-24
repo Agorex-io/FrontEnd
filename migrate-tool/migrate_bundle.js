@@ -60,7 +60,63 @@ exports.default = Balance;
 },{"babel-runtime/core-js/object/get-prototype-of":30,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39,"react":337}],2:[function(require,module,exports){
 "use strict";
 
-},{}],3:[function(require,module,exports){
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _getPrototypeOf = require("babel-runtime/core-js/object/get-prototype-of");
+
+var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+
+var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+var _createClass2 = require("babel-runtime/helpers/createClass");
+
+var _createClass3 = _interopRequireDefault(_createClass2);
+
+var _possibleConstructorReturn2 = require("babel-runtime/helpers/possibleConstructorReturn");
+
+var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+
+var _inherits2 = require("babel-runtime/helpers/inherits");
+
+var _inherits3 = _interopRequireDefault(_inherits2);
+
+var _react = require("react");
+
+var _react2 = _interopRequireDefault(_react);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var Order = function (_React$Component) {
+    (0, _inherits3.default)(Order, _React$Component);
+
+    function Order(props) {
+        (0, _classCallCheck3.default)(this, Order);
+        return (0, _possibleConstructorReturn3.default)(this, (Order.__proto__ || (0, _getPrototypeOf2.default)(Order)).call(this, props));
+    }
+
+    (0, _createClass3.default)(Order, [{
+        key: "render",
+        value: function render() {
+            return _react2.default.createElement(
+                "li",
+                null,
+                _react2.default.createElement("input", { type: "checkbox",
+                    onChange: this.props.onChange,
+                    checked: this.props.checked }),
+                this.props.label
+            );
+        }
+    }]);
+    return Order;
+}(_react2.default.Component);
+
+exports.default = Order;
+
+},{"babel-runtime/core-js/object/get-prototype-of":30,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39,"react":337}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -253,39 +309,8 @@ var ConfirmationWindow = function (_React$Component) {
     }
 
     (0, _createClass3.default)(ConfirmationWindow, [{
-        key: "mapAllSelected",
-        value: function mapAllSelected() {
-            var _this2 = this;
-
-            // If no tokens, display "No Tokens Added"
-            if (this.props.tokens_added.length < 1) {
-                return _react2.default.createElement(
-                    "li",
-                    { key: "None", className: "list-group-item" },
-                    "Nothing Selected for Migration..."
-                );
-            }
-
-            // Map added tokens to list items
-            return this.props.tokens_added.map(function (token_addr) {
-                // If no added tokens, return list item showing none added
-                var name = get_token_symbol(token_addr).toString();
-                if (name === "Name Error") {
-                    name = "EnteredToken";
-                }
-                var balance = get_token_balance(token_addr, _this2.props.user_address).toString();
-                return _react2.default.createElement(
-                    "li",
-                    { key: token_addr, className: "list-group-item" },
-                    _react2.default.createElement("input", { value: token_addr, type: "checkbox", defaultChecked: true }),
-                    name + ":" + balance
-                );
-            });
-        }
-    }, {
         key: "render",
         value: function render() {
-            var all_selected = this.all_selected;
             return _react2.default.createElement(
                 "div",
                 { className: "modal-content" },
@@ -316,11 +341,7 @@ var ConfirmationWindow = function (_React$Component) {
                         null,
                         " Added tokens "
                     ),
-                    _react2.default.createElement(
-                        "ul",
-                        { className: "list-group" },
-                        all_selected
-                    ),
+                    _react2.default.createElement("ul", { className: "list-group" }),
                     _react2.default.createElement("br", null),
                     _react2.default.createElement(
                         "button",
@@ -735,11 +756,11 @@ var OrdersWindow = function (_React$Component) {
             return this.props.orders_buy_options.map(function (order, index) {
                 return _react2.default.createElement(_Order2.default, {
                     onChange: function onChange() {
-                        return _this2.props.onOrderSelect(index);
+                        return _this2.props.on_order_sell_select(index);
                     },
                     checked: order.is_selected,
-                    key: order.id,
-                    label: order.name + ":" + order.balance });
+                    key: order.id.toString(),
+                    label: order.amountGet.toString() + " of " + order.tokenGetName.toString() + " for " + order.tokenGive.toString() + " of you " + order.tokenGiveName.toString() });
             });
         }
     }, {
@@ -750,11 +771,11 @@ var OrdersWindow = function (_React$Component) {
             return this.props.orders_sell_options.map(function (order, index) {
                 return _react2.default.createElement(_Order2.default, {
                     onChange: function onChange() {
-                        return _this3.props.onOrderSelect(index);
+                        return _this3.props.on_order_sell_select(index);
                     },
                     checked: order.is_selected,
-                    key: order.id,
-                    label: order.name + ":" + order.balance });
+                    key: order.id.toString(),
+                    label: order.amountGet.toString() + " of " + order.tokenGetName.toString() + " for " + order.tokenGive.toString() + " of you " + order.tokenGiveName.toString() });
             });
         }
     }, {
@@ -1079,16 +1100,6 @@ try {
 }
 //TEMP============================================================================
 
-// -- init socket.io object for fetching orders --
-var FD = io("http://api.localhost:8080/");
-FD.connect();
-
-FD.on('connect', function (data) {
-    console.log('connected to FD api');
-});
-FD.on('disconnect', function (data) {
-    console.log('disconnected from FD api');
-});
 
 // Parent React component that controls window state
 var Application = function (_React$Component) {
@@ -1100,10 +1111,10 @@ var Application = function (_React$Component) {
         var _this = (0, _possibleConstructorReturn3.default)(this, (Application.__proto__ || (0, _getPrototypeOf2.default)(Application)).call(this, props));
 
         _this.state = {
-            user_address: '',
+            // Initialize window to -2 (NoAccountWindow)
+            window: -2,
 
-            // Initialize window to -3 (LoadingWindow)
-            window: -3,
+            user_address: '',
 
             balances_fetched: false,
 
@@ -1113,41 +1124,29 @@ var Application = function (_React$Component) {
             balances_options: [],
 
             orders_buy_options: [],
-            orders_sell_options: []
+            orders_sell_options: [],
+
+            estimated_gas: 0
         };
 
-        // Listen for market response and update buy and sells if there is one
-        FD.on('market', function (data) {
-            console.log('returned market');
+        // Bind socket handler function
+        _this.handle_order_fetch = _this.handle_order_fetch.bind(_this);
 
-            if (data.hasOwnProperty('myOrders')) {
-                console.log('has order!' + data.myOrders);
-                //add sell orders
-                var sells = [];
-                if (data.myOrders.hasOwnProperty('sells')) {
-                    data.myOrders.sells.forEach(function (val) {
-                        sells.push(val);
-                    });
-                }
-
-                //add buy orders
-                var buys = [];
-                if (data.myOrders.hasOwnProperty('buys')) {
-                    data.myOrders.buys.forEach(function (val) {
-                        buys.push(val);
-                    });
-                }
-
-                var new_sells = this.state.orders_sell_options.concat(sells);
-                var new_buys = this.state.orders_sell_options.concat(buys);
-
-                this.setState({
-                    orders_sell_options: new_sells,
-                    orders_buy_options: new_buys,
-                    order_fetched_progress: this.state.order_fetched_progress + 1
-                });
-            }
+        // -- init socket.io for fetching orders --
+        var socket_addr = "https://api.forkdelta.com";
+        _this.FD = io.connect(socket_addr, {
+            transports: ['websocket']
         });
+
+        _this.FD.on('connect', function (data) {
+            console.log('connected to FD api');
+        });
+        _this.FD.on('disconnect', function (data) {
+            console.log('disconnected from FD api');
+        });
+
+        // Listen for market response and update buy and sells if there is one
+        _this.FD.on('market', _this.handle_order_fetch);
         return _this;
     }
 
@@ -1156,7 +1155,7 @@ var Application = function (_React$Component) {
 
 
         /* --- Navigate to next window -- */
-        value: function nextWindow(change_from, change_to) {
+        value: function nextWindow() {
             var current_window = this.state.window;
             if (current_window < 5) {
                 current_window += 1;
@@ -1170,7 +1169,7 @@ var Application = function (_React$Component) {
 
 
         /* --- Navigate to previous window -- */
-        value: function previousWindow(change_from, change_to) {
+        value: function previousWindow() {
             var current_window = this.state.window;
             if (current_window > 1) {
                 current_window -= 1;
@@ -1221,24 +1220,15 @@ var Application = function (_React$Component) {
                 });
             }
         }
-    }, {
-        key: 'fetch_populated_orders',
-        value: function fetch_populated_orders() {
-            // Check that balances are only fetched once
-            if (!this.state.orders_fetched) {
-                var temp_addresses = get_orders_options();
-                this.setState({
-                    orders_options: temp_addresses,
-                    orders_fetched: true
-                });
-            }
-        }
 
         /* --- One time populate of balances_options with fetched balances from out code --- */
 
     }, {
-        key: 'fetch_populated_balances',
-        value: function fetch_populated_balances() {
+        key: 'fetch_user_balances_and_orders',
+        value: function fetch_user_balances_and_orders() {
+            // Fetch user address
+            this.get_user_address();
+
             // Check that balances are only fetched once
             if (!this.state.balances_fetched) {
                 var temp_addresses = get_balances_options();
@@ -1249,11 +1239,55 @@ var Application = function (_React$Component) {
                     order_fetches_needed: order_fetches_needed
                 });
 
-                // Begin fetching orders
-                var _user_address = this.state.user_address;
-                this.state.balances_options.forEach(function (val) {
-                    //send messages to FD socket io to see if there are any orders for every token from this user
-                    FD.emit('getMarket', { token: val, user: _user_address });
+                // Fetch orders
+                var user_addr = this.state.user_address.toString();
+                var FD = this.FD;
+                this.state.balances_options.forEach(function (balance) {
+                    // Emit getMarket API call to FD socket to get user orders
+                    FD.emit('getMarket', { token: balance.addr, user: user_addr });
+                });
+            }
+        }
+    }, {
+        key: 'handle_order_fetch',
+        value: function handle_order_fetch(data) {
+            console.log('Returned market from ForkDelta API');
+
+            if (data.hasOwnProperty('myOrders')) {
+                //add sell orders
+                var sells = [];
+                if (data.myOrders.hasOwnProperty('sells')) {
+                    data.myOrders.sells.forEach(function (val) {
+                        // Order selected for migration by default
+                        val['is_selected'] = true;
+                        // Get token symbols for displaying orders
+                        val['tokenGetName'] = get_token_symbol(val.tokenGet);
+                        val['tokenGiveName'] = get_token_symbol(val.tokenGive);
+                        sells.push(val);
+                    });
+                }
+
+                //add buy orders
+                var buys = [];
+                if (data.myOrders.hasOwnProperty('buys')) {
+                    data.myOrders.buys.forEach(function (val) {
+                        // Order selected for migration by default
+                        val['is_selected'] = true;
+                        // Get token symbols for displaying orders
+                        val['tokenGetName'] = get_token_symbol(val.tokenGet);
+                        val['tokenGiveName'] = get_token_symbol(val.tokenGive);
+                        buys.push(val);
+                    });
+                }
+
+                var new_sells = this.state.orders_sell_options.concat(sells);
+                var new_buys = this.state.orders_sell_options.concat(buys);
+                var incremented_fetched = this.state.order_fetched_progress + 1;
+
+                this.setState({
+                    orders_sell_options: new_sells,
+                    orders_buy_options: new_buys,
+                    order_fetched_progress: incremented_fetched
                 });
             }
         }
@@ -1271,10 +1305,48 @@ var Application = function (_React$Component) {
     }, {
         key: 'on_balance_select',
         value: function on_balance_select(index) {
-            console.log(index);
             var balances_updated = this.state.balances_options;
             balances_updated[index].is_selected = !balances_updated[index].is_selected;
             this.setState({ balances_options: balances_updated });
+        }
+
+        // Toggle sell order selected
+
+    }, {
+        key: 'on_order_sell_select',
+        value: function on_order_sell_select(index) {
+            var sells_updated = this.state.orders_sell_options;
+            sells_updated[index].is_selected = !sells_updated[index].is_selected;
+            this.setState({ orders_sell_options: sells_updated });
+        }
+
+        // Toggle buy order selected
+
+    }, {
+        key: 'on_order_buy_select',
+        value: function on_order_buy_select(index) {
+            var buys_updated = this.state.orders_buy_options;
+            buys_updated[index].is_selected = !buys_updated[index].is_selected;
+            this.setState({ orders_buy_options: buys_updated });
+        }
+    }, {
+        key: 'estimate_gas',
+        value: function estimate_gas() {
+            var all_options = this.state.balances_options.concat(this.state.orders_buy_options).concat(this.state.orders_sell_options);
+            all_options.forEach(function (option) {
+                var new_estimated_gas = this.state.estimated_gas;
+                // TEMP
+                new_estimated_gas += 1;
+                this.setState({ estimated_gas: new_estimated_gas });
+            });
+        }
+
+        // --- contract migration logic ---
+
+    }, {
+        key: 'begin_migration',
+        value: function begin_migration() {
+            console.log("Begin migration");
         }
     }, {
         key: 'render',
@@ -1284,9 +1356,6 @@ var Application = function (_React$Component) {
             // Determine current window
             var current_window = void 0;
             switch (this.state.window) {
-                case -3:
-                    current_window = _react2.default.createElement(_LoadingWindow2.default, null);
-                    break;
                 case -2:
                     current_window = _react2.default.createElement(_NoAccountWindow2.default, { closeWindow: function closeWindow() {
                             return _this2.closeWindow();
@@ -1299,7 +1368,7 @@ var Application = function (_React$Component) {
                     break;
                 case 1:
                     current_window = _react2.default.createElement(_IntroductionWindow2.default, { nextWindow: function nextWindow() {
-                            return _this2.nextWindow('', 'balances');
+                            return _this2.nextWindow();
                         },
                         get_user_address: function get_user_address() {
                             return _this2.get_user_address();
@@ -1308,14 +1377,13 @@ var Application = function (_React$Component) {
                     break;
                 case 2:
                     current_window = _react2.default.createElement(_BalancesWindow2.default, { nextWindow: function nextWindow() {
-                            return _this2.nextWindow("balances", '');
+                            return _this2.nextWindow();
                         },
                         previousWindow: function previousWindow() {
-                            return _this2.previousWindow("balances", '');
+                            return _this2.previousWindow();
                         },
                         balances_options: this.state.balances_options,
                         balances_selected: this.state.balances_selected,
-                        user_address: this.state.user_address,
                         onBalanceSelect: function onBalanceSelect(index) {
                             return _this2.on_balance_select(index);
                         },
@@ -1325,26 +1393,35 @@ var Application = function (_React$Component) {
                     break;
                 case 3:
                     current_window = _react2.default.createElement(_OrdersWindow2.default, { nextWindow: function nextWindow() {
-                            return _this2.nextWindow("orders", '');
+                            return _this2.nextWindow();
                         },
                         previousWindow: function previousWindow() {
-                            return _this2.previousWindow("orders", '');
+                            return _this2.previousWindow();
                         },
                         orders_buy_options: this.state.orders_buy_options,
                         orders_sell_options: this.state.orders_sell_options,
-                        user_address: this.state.user_address });
+                        onSellSelect: function onSellSelect(index) {
+                            return _this2.on_order_sell_select(index);
+                        },
+                        onBuySelect: function onBuySelect(index) {
+                            return _this2.on_order_buy_select(index);
+                        } });
                     break;
                 case 4:
                     current_window = _react2.default.createElement(_ConfirmationWindow2.default, { nextWindow: function nextWindow() {
                             return _this2.nextWindow();
                         },
                         previousWindow: function previousWindow() {
-                            return _this2.previousWindow('', 'orders');
-                        } });
+                            return _this2.previousWindow();
+                        },
+                        estimated_gas: this.state.estimated_gas });
                     break;
                 case 5:
                     current_window = _react2.default.createElement(_SuccessWindow2.default, { closeWindow: function closeWindow() {
                             return _this2.closeWindow();
+                        },
+                        begin_migration: function begin_migration() {
+                            return _this2.begin_migration();
                         } });
                     break;
             }
@@ -1387,19 +1464,17 @@ var web3 = new Web3(new Web3.providers.HttpProvider(rpc_api_provider));
 // utility balance-fetching smart contract
 var balance_fetch_contract = web3.eth.contract(balance_fetch_contract_abi);
 var balance_fetch = balance_fetch_contract.at(balance_fetch_contract_addr);
+
 // old EtherDelta smart contract, URL: https://github.com/etherdelta/smart_contract
 var ED_contract = web3.eth.contract(old_contract_abi);
 var ED = ED_contract.at(old_contract);
+
 // generic contract for fetching any ERC20-compliant contract's symbol (name)
 var generic_contract = web3.eth.contract(generic_contract_abi);
 
 // balances and arrays containing options to be displayed in ms
 var balances = {};
 var balances_options = []; // Non-zero balances to be displayed as options for migration
-var orders_options = []; // Orders to be displayed as options for migration
-// options selected by user for migration from ED to FD smart contract
-var balances_selected = []; // Balances from balances_options selected by user to be migrated
-var orders_selected = []; // Orders from orders_options selected by user to be migrated
 
 // frontend variables
 var ED_balances = $('#ED-migration-balances');
@@ -1408,38 +1483,37 @@ var ED_orders = $('#ED-migration-orders');
 // TEMP: Testing addresses with multiple balances. Interchange with promised_user_addr
 // var user_address = "0xa318f2e298a86d07144cc46d00e29b5fe9385df7";
 // var user_address = '0xa83adca55ce5d0cc43ba16f4247ca65229a1bfb1';
-var user_address = '0x5902fcFA445E0E78Ab20C394a561292353610774';
-// var user_address;
+// var user_address = '0xB9117FBbC2692AA305187267A97F3c0c9eD85471';
 
-// call async function to load user address
-// TEMP: Just loading user address
+
+// Get selected user_account
+// TODO: Listen for user account change
 // var user_address_promise = fetch_user_addr();
-
+// var user_address = '0xB9117FBbC2692AA305187267A97F3c0c9eD85471';
+// var user_address = '0x0b419bce1cb87adea84a913fa903593fb68d33b1';
+var user_address = '0xe65114e81c72be5a1dd64d661ff0965eb050d507';
+// If user address is selected
 // once user address loads, check for ED balances and run migration tool if any balances exist for account
-// user_address_promise.then(function (promised_user_addr) {
+// user_address_promise.then(function (user_addr_resolved) {
+//     user_address = user_addr_resolved;
 
-// TEMP: change promised_user_addr to user_address to get browser user address
-// user_address = promised_user_addr;
-
-console.log("User address loaded: " + user_address);
-
-// get balances from migration smart contract utility
+// get balances
 fetch_balances(user_address, token_addresses, old_contract);
-// check for orders only for the tokens that users have balances for
-// TODO: Orders work on node.js locally run file, but return 420 error when fetching from local host
-// get_orders(user_address, balances_options);
 
-// Render migration tool and get orders if user has balances
+// If user has balances change React window and open migration tool
 if (balances_options.length >= 1) {
     console.log("User has balances on ED contract, opening migration tool.");
 
-    // Display Migration Tool Component and Change State to introduction
-    document.getElementById('migrationTool').style.display = 'block';
+    // Change window
     change_window(1);
+
+    // Display Migration Tool
+    document.getElementById('migrationTool').style.display = 'block';
 } else {
-    // Change window to NoBalancesWindow.js
+    // Show no balances window
     change_window(-1);
 }
+
 // });
 
 // Front-end event listeners
@@ -1573,26 +1647,10 @@ function sleep(ms) {
     });
 }
 
-// --- contract migration logic ---
-function begin_migration() {
-    console.log("Begin migration");
-    console.log("Selected Balances:");
-    console.log(balances_selected);
-    console.log("Selected Orders:");
-    console.log(orders_selected);
-    if (balances_selected.length >= 1) {
-        // TODO: logic to transfer balances from ED smart contract to FD contract
-    }
-
-    if (orders_selected.length >= 1) {
-        // TODO: logic to transfer orders from ED smart contract to FD contract
-    }
-}
-
 // Change window state from outside of component (useful for when no user account or balances are present)
 function change_window(state) {
     if (state == 1) {
-        react_component.fetch_populated_balances();
+        react_component.fetch_user_balances_and_orders();
     }
     react_component.setState({ window: state });
 }
@@ -1603,11 +1661,6 @@ function _get_user_address() {
 
 function get_balances_options() {
     return balances_options;
-}
-
-function get_orders_options() {
-    // TODO: Populate orders_options
-    return orders_options;
 }
 
 },{"./components/windows/BalancesWindow":3,"./components/windows/ConfirmationWindow":4,"./components/windows/IntroductionWindow":5,"./components/windows/LoadingWindow":6,"./components/windows/NoAccountWindow":7,"./components/windows/NoBalancesWindow":8,"./components/windows/OrdersWindow":9,"./components/windows/SuccessWindow":10,"babel-runtime/core-js/object/get-prototype-of":30,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39,"babel-runtime/regenerator":135,"bignumber.js":139,"react":337,"react-dom":334,"socket.io-client":363,"web3":380}],12:[function(require,module,exports){
@@ -28461,7 +28514,7 @@ module.exports={
   "_args": [
     [
       "elliptic@6.4.0",
-      "/usr/share/nginx/html/migrate-tool"
+      "/home/squirrel/Projects/ForkDelta/forkdelta.github.io/migrate-tool"
     ]
   ],
   "_development": true,
@@ -28487,7 +28540,7 @@ module.exports={
   ],
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.0.tgz",
   "_spec": "6.4.0",
-  "_where": "/usr/share/nginx/html/migrate-tool",
+  "_where": "/home/squirrel/Projects/ForkDelta/forkdelta.github.io/migrate-tool",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
