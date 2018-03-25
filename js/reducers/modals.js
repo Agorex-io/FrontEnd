@@ -1,5 +1,5 @@
-/* This module was module number 559 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 559 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ./modals
 */
 'use strict';
 function _defineProperty(obj, key, value) {
@@ -28,4 +28,4 @@ exports.default = function() {
         default:
             return state;
     }
-          };
+            };

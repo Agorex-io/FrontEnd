@@ -1,5 +1,5 @@
-/* This module was module number 571 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 571 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ./smart_contract/etherdelta.sol.json
 */
 module.exports = [
     {
@@ -362,4 +362,4 @@ module.exports = [
         name: 'Withdraw',
         type: 'event',
     },
-          ];
+            ];

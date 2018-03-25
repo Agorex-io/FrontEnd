@@ -1,5 +1,5 @@
-/* This module was module number 393 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 393 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* sanitizer
 */
 var html4 = require('./lib/html4.js'),
     URI = require('./lib/uri.js');
@@ -996,4 +996,4 @@ var Sanitizer = {};
               module.exports &&
               (exports = module.exports = Sanitizer),
           (exports.Sanitizer = Sanitizer))
-                  : (this.Sanitizer = Sanitizer);
+                    : (this.Sanitizer = Sanitizer);

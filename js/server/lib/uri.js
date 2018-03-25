@@ -1,5 +1,5 @@
-/* This module was module number 392 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 392 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ./lib/uri.js
 */
 var URI = (function() {
     function parse(uriStr) {
@@ -469,4 +469,4 @@ var URI = (function() {
 void 0 !== exports
     ? (void 0 !== module && module.exports && (exports = module.exports = URI),
       (exports.URI = URI))
-              : 'undefined' != typeof window && (window.URI = URI);
+                : 'undefined' != typeof window && (window.URI = URI);

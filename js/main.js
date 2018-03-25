@@ -1,5 +1,5 @@
-/* This module was module number 555 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 555 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* main.js
 */
 (function(Buffer) {
     'use strict';
@@ -189,8 +189,8 @@
                                             resizable: false,
                                             pinnable: false,
                                             maximizable: false,
-                                            /* Although you'd expect this to need to be true, and the docs say that (http://alertifyjs.com/alert/modal.html) setting it to false removes the dimmer but makes it so the dialog cannot be dismissed by clicking on page content :/ */
-                                            modal: false
+                                            modal: true,
+                                            closableByDimmer: false
                                         },
                                     };
                                 },
@@ -3573,4 +3573,4 @@
                 });
         }();
     module.exports = { EtherDelta: etherDelta, utility: utility(void 0) };
-          }.call(this, require('buffer').Buffer));
+            }.call(this, require('buffer').Buffer));

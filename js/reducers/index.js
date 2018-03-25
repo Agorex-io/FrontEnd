@@ -1,5 +1,5 @@
-/* This module was module number 558 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 558 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ./reducers/index.js
 */
 'use strict';
 function _interopRequireDefault(obj) {
@@ -36,4 +36,4 @@ var _redux = require('redux'),
         myTrades: _myTrades2.default,
         myOrders: _myOrders2.default,
     });
-          module.exports = reducer;
+            module.exports = reducer;

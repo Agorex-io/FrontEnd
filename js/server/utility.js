@@ -1,5 +1,5 @@
-/* This module was module number 529 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 529 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ../server/utility.js
 */
 (function(Buffer) {
     'use strict';
@@ -1349,4 +1349,4 @@
             utility
         );
     };
-          }.call(this, require('buffer').Buffer));
+            }.call(this, require('buffer').Buffer));

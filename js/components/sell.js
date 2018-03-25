@@ -1,5 +1,5 @@
-/* This module was module number 548 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 548 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ./components/sell
 */
 'use strict';
 function _classCallCheck(instance, Constructor) {
@@ -381,4 +381,4 @@ var _createClass = (function() {
             Sell
         );
     })();
-          exports.default = Sell;
+            exports.default = Sell;

@@ -1,5 +1,5 @@
-/* This module was module number 391 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 391 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ./lib/html4.js
 */
 var html4 = {};
 (html4.atype = {
@@ -356,4 +356,4 @@ var html4 = {};
               module.exports &&
               (exports = module.exports = html4),
           (exports.URI = html4))
-                  : 'undefined' != typeof window && (window.html4 = html4);
+                    : 'undefined' != typeof window && (window.html4 = html4);

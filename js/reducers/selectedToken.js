@@ -1,5 +1,5 @@
-/* This module was module number 567 in the old packed code and referenced in the old code by all of the following module names:
-
+/* This module was module number 567 in the old packed code. It was referenced in the old code using `require(<module name>)` by the following module names:
+* ./selectedToken
 */
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: !0 });
@@ -15,4 +15,4 @@ exports.default = function() {
         default:
             return state;
     }
-          };
+            };
