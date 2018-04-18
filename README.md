@@ -1,7 +1,8 @@
-# Agorex-io
-[Chat on Discord](https://discord.gg/GVuj6UY)
-[Join us on Reddit](https://www.reddit.com/r/Agorex/)
+# Agorex - The Cooperative Decentralized Exchange
+-[![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/GVuj6UY)
+-[![Join us on Reddit](https://img.shields.io/badge/reddit-Agorex-red.svg)](https://www.reddit.com/r/Agorex/)
 
-This repository contains the old UI forked from [ForkDelta](https://github.com/forkdelta), and is an artifact from the migration of developers from ForkDelta to Agorex-io.
+This repository contains the old UI forked from [ForkDelta](https://github.com/forkdelta), and is an artifact from the migration of developers from ForkDelta to Agorex.
 
-Until the cooperative makes a formal decision regarding a development roadmap, this repository will remain in Agorex-io's GitHub organization.
+# Future of FrontEnd
+We are working with the community to develop our plans for the project. More information will be posted here soon. For now come chat with us on our Discord and help influence the future of an open, honest, community-run decentralized exchange!
