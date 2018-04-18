@@ -126,7 +126,7 @@ a.navbar-brand {
 
 #balance > div:first-child {
   /* The react balance widget wraps everything in a single div without any ID or class and it ends up scrolling ever-so-slightly in most cases without this */
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 #balance > div > div:nth-child(2) > div {
@@ -138,7 +138,8 @@ a.navbar-brand {
 
 #balance .tab-content .table-balances {
   /* We need overflow-x:auto on Balances to keep it from getting clipped. However, the table is ever-so slightly too wide for the bootstrap md-3 column without it in chrome AND overflow-x:auto (it fits with overflow-x:hidden */
-  width: 305px;
+  /*width: 305px;*/
+ width: 100%;
 }
 
 #balance .tab-content {
@@ -697,7 +698,11 @@ fieldset[disabled] .form-control {
 		height: 330px;
 	}
 
-	.row-box.height4 {
-		height: 400px;
+	#new-order-box {
+		height: 440px;
+	}
+	
+	#new-order-box .tab-content {
+		height: auto;
 	}
 }

@@ -65,7 +65,7 @@
 
           <div id="order-book-box" class="widget-box col-md-2">
             <div class="row-header trn">order_book</div>
-            <div id="orders"></div>
+            <div id="orders" class="scroll"></div>
           </div>
 
           <div id="price-chart-box" class="widget-box col-md-4">
@@ -85,10 +85,8 @@
           <div id="trades-box" class="widget-box col-md-3">
             <div class="row-header trn">
               <span>trades</span>
-            </div>
-            <div class="scroll">
-              <div id="trades"></div>
-            </div>
+            </div>            
+			<div id="trades" class="scroll"></div>
           </div>
 
         </div>
@@ -124,7 +122,7 @@
                   <li role="presentation"><a href="#myFunds" aria-controls="myFunds" role="tab" data-toggle="tab" class="trn">funds</a></li>
                 </ul>
               </div>
-              <div class="tab-content">
+              <div class="tab-content scroll">
                 <div role="tabpanel" class="tab-pane active" id="important">
                   <div style="margin: 12px;">
                     <p>
@@ -166,8 +164,8 @@
           </div>
 
           <div id="updates-box" class="widget-box col-md-3">
-            <div class="row-header trn">updates</div>
-            <div id="updates"></div>
+            <div class="row-header trn">News</div>
+            <div id="updates" class="scroll"></div>
           </div>
 
         </div>
@@ -225,7 +223,7 @@
         twttr.widgets.createTimeline(
           {
             sourceType: 'profile',
-            screenName: 'ForkDelta'
+            screenName: 'Agorex_io'
           },
           document.getElementById('updates'),
           {
