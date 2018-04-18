@@ -1,6 +1,6 @@
 # Agorex - The Cooperative Decentralized Exchange
--[![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/GVuj6UY)
--[![Join us on Reddit](https://img.shields.io/badge/reddit-Agorex-red.svg)](https://www.reddit.com/r/Agorex/)
+[![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/GVuj6UY)
+[![Join us on Reddit](https://img.shields.io/badge/reddit-Agorex-red.svg)](https://www.reddit.com/r/Agorex/)
 
 This repository contains the old UI forked from [ForkDelta](https://github.com/forkdelta), and is an artifact from the migration of developers from ForkDelta to Agorex.
 
