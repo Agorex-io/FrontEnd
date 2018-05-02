@@ -85,7 +85,7 @@
       : "async/dist/async.min.js"),
     translations = require("./translations.json"),
     request = require("request"),
-    utility = require("../server/utility.js"),
+    utility = require("./server/utility"),
     io = require("socket.io-client"),
     xss = require("xss"),
     abiEtherDelta = require("./smart_contract/etherdelta.sol.json"),
