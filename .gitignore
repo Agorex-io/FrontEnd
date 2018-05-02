@@ -7,3 +7,5 @@ report*
 .pydevproject
 .vscode
 /scripts/unpacked_modules
+/scripts/main-unminified-old.js-lovlify/
+/scripts/_old_main_packed_modules.js-lovlify
